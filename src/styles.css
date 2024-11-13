@@ -1,0 +1,130 @@
+/* src/styles.css */
+
+/* General Styles */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+/* Dark Mode */
+body.dark-mode {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+body.dark-mode .thumbnail {
+  filter: brightness(0.8);
+}
+
+/* Header */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: #f5f5f5;
+}
+
+.header.dark-mode {
+  background-color: #1f1f1f;
+}
+
+/* Settings Container */
+.settings-container {
+  display: flex;
+  gap: 10px;
+}
+
+.settings-container button {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1.2em;
+  margin-left: 15px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.settings-container button:hover {
+  color: #ddd;
+}
+
+/* Gallery */
+.gallery {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 20px;
+}
+
+.gallery.dark-mode {
+  background-color: #1f1f1f;
+}
+
+/* Model Card */
+.model-card {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  margin: 15px;
+  width: 200px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.dark-mode .model-card {
+  background-color: #1e1e1e;
+  border-color: #333;
+}
+
+.model-card:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 15px 25px rgba(0, 0, 0, 0.3);
+}
+
+.model-card img {
+  width: 100%;
+  height: auto;
+}
+
+.model-name {
+  text-align: center;
+  padding: 10px 0;
+}
+
+/* Back Button */
+button {
+  background-color: #333;
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+button:hover {
+  background-color: #555;
+}
+
+/* Dark Mode Button Hover */
+.dark-mode button:hover {
+  background-color: #444;
+}
+
+/* Model Viewer */
+.model-viewer-layout {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 20px;
+}
+
+.model-viewer-container {
+  flex: 2;
+  min-width: 300px;
+}
+
+.model-info {
+  flex: 1;
+  padding: 20px;
+}

@@ -1,0 +1,29 @@
+.gallery {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    padding: 20px;
+  }
+  
+  .model-card {
+    width: 200px;
+    margin: 20px;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  
+  .model-card:hover {
+    transform: scale(1.05);
+  }
+  
+  .thumbnail {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+  }
+  
+  .model-name {
+    text-align: center;
+    margin-top: 10px;
+  }
+  
