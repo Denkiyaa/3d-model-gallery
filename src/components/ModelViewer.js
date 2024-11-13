@@ -47,7 +47,7 @@ const ModelViewer = () => {
     scene.add(ambientLight);
 
     // Directional Light
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // Increase intensity to highlight reflection
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 3); // Increase intensity to highlight reflection
     directionalLight.position.set(10, 20, 10);
     directionalLight.castShadow = true;
     scene.add(directionalLight);
@@ -59,11 +59,13 @@ const ModelViewer = () => {
 
       geometry.center(); // Center the model geometry
       const material = new THREE.MeshStandardMaterial({
-        color: 0x888888, // Model color
+        color: "#dcdcdc", // Model color
         metalness: 0.1,  // Increase reflectivity
         roughness: 0.5,  // Decrease roughness for a smoother, shinier surface
+        clearcoat: 0.1,  // Yüzeye ek bir parlaklık sağlar
+        reflectivity: 0.2  // Yansıma oranını artırır   
       }); const mesh = new THREE.Mesh(geometry, material);
-      mesh.castShadow = true;
+      mesh.castShadow = false;
       mesh.receiveShadow = true;
       scene.add(mesh);
 
