@@ -28,19 +28,18 @@ const ModelViewer = () => {
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.shadowMap.enabled = false;
-    container.appendChild(renderer.domElement);
-    renderer.setClearColor(new THREE.Color('#2e2e30')); // Light gray background
+    renderer.setClearColor(new THREE.Color('#2c2c2c')); // Set background color to match boundary
 
+    container.appendChild(renderer.domElement);
 
     // Orbit Controls with optimized settings for smoother and longer spins
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;           // Enable damping for smooth interaction
-    controls.rotateSpeed = 1.0;              // Adjust rotate speed for more control
-    controls.maxPolarAngle = Math.PI;        // Allow the camera to rotate fully to view under the model
-    controls.minDistance = 10;               // Minimum distance from the model
-    controls.maxDistance = 500;              // Maximum distance from the model
+    controls.enableDamping = true; // Enable damping for smooth interaction
+    controls.rotateSpeed = 1.2; // Adjust rotate speed for more control
+    controls.dampingFactor = 0.05; // Damping factor for smoother rotation
+    controls.minDistance = 10; // Minimum distance from the model
+    controls.maxDistance = 500; // Maximum distance from the model
     controls.update();
-
 
     // Ambient Light
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // Increase intensity to make everything brighter
@@ -52,41 +51,43 @@ const ModelViewer = () => {
     directionalLight.castShadow = true;
     scene.add(directionalLight);
 
-
     // Load STL model
     const loader = new STLLoader();
-    loader.load(modelPath, (geometry) => {
+    loader.load(
+      modelPath,
+      (geometry) => {
+        geometry.center(); // Center the model geometry
+        const material = new THREE.MeshStandardMaterial({
+          color: '#dcdcdc', // Model color
+          metalness: 0.1, // Increase reflectivity
+          roughness: 0.5, // Decrease roughness for a smoother, shinier surface
+          clearcoat: 0.1, // Add additional surface gloss
+          reflectivity: 0.2, // Increase reflectivity
+        });
 
-      geometry.center(); // Center the model geometry
-      const material = new THREE.MeshStandardMaterial({
-        color: "#dcdcdc", // Model color
-        metalness: 0.1,  // Increase reflectivity
-        roughness: 0.5,  // Decrease roughness for a smoother, shinier surface
-        clearcoat: 0.1,  // Yüzeye ek bir parlaklık sağlar
-        reflectivity: 0.2  // Yansıma oranını artırır   
-      }); const mesh = new THREE.Mesh(geometry, material);
-      mesh.castShadow = false;
-      mesh.receiveShadow = true;
-      scene.add(mesh);
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.castShadow = false;
+        mesh.receiveShadow = true;
+        scene.add(mesh);
 
-      adjustModel(mesh, scene); // Rotate and adjust model position
-      createDynamicGround(scene, mesh); // Create dynamic ground
+        adjustModel(mesh, scene); // Rotate and adjust model position
+        createDynamicGround(scene, mesh); // Create dynamic ground
 
-      // Camera adjustments
-      const boundingBox = new THREE.Box3().setFromObject(mesh);
-      const size = boundingBox.getSize(new THREE.Vector3());
-      const center = boundingBox.getCenter(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z);
-      const fitHeightDistance = maxDim / (2 * Math.atan((Math.PI * camera.fov) / 360));
-      const fitWidthDistance = fitHeightDistance / camera.aspect;
-      const distance = Math.max(fitHeightDistance, fitWidthDistance);
+        // Camera adjustments
+        const boundingBox = new THREE.Box3().setFromObject(mesh);
+        const size = boundingBox.getSize(new THREE.Vector3());
+        const center = boundingBox.getCenter(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const fitHeightDistance = maxDim / (2 * Math.atan((Math.PI * camera.fov) / 360));
+        const fitWidthDistance = fitHeightDistance / camera.aspect;
+        const distance = Math.max(fitHeightDistance, fitWidthDistance);
 
-      camera.position.set(center.x, center.y + size.y / 2, distance * 4);
-      camera.lookAt(center);
-      controls.maxDistance = distance * 6;
-      controls.minDistance = distance * 0.5;
-      controls.update();
-    },
+        camera.position.set(center.x, center.y + size.y / 2, distance * 4);
+        camera.lookAt(center);
+        controls.maxDistance = distance * 6;
+        controls.minDistance = distance * 0.5;
+        controls.update();
+      },
       undefined,
       (error) => {
         console.error('Error loading model:', error);
@@ -142,16 +143,17 @@ const ModelViewer = () => {
     mesh.position.y -= minY;
   }
 
-  // Helper function to create dynamic ground based on the model size
   function createDynamicGround(scene, mesh) {
     const boundingBox = new THREE.Box3().setFromObject(mesh);
     const size = boundingBox.getSize(new THREE.Vector3());
-
-    const groundPaddingFactor = 2; // Ground size is larger to give some padding around the model
+    const groundPaddingFactor = 2; // Padding around the model
     const groundSize = Math.max(size.x, size.z) * groundPaddingFactor;
 
-    // Create checkered texture for ground
-    const divisions = Math.round(groundSize / 10);
+    let tileSize = Math.max(size.x, size.z) / 10; // Dynamically calculate tile size
+    tileSize = Math.min(tileSize, 50);
+    tileSize = Math.max(tileSize, 5);
+
+    const divisions = Math.round(groundSize / tileSize);
     const checkeredCanvas = document.createElement('canvas');
     checkeredCanvas.width = divisions;
     checkeredCanvas.height = divisions;
@@ -159,7 +161,7 @@ const ModelViewer = () => {
 
     for (let i = 0; i < divisions; i++) {
       for (let j = 0; j < divisions; j++) {
-        ctx.fillStyle = (i + j) % 2 === 0 ? '#444444' : '#888888'; // Create a checkered pattern
+        ctx.fillStyle = (i + j) % 2 === 0 ? '#333333' : '#cccccc'; // Checkered pattern
         ctx.fillRect(i, j, 1, 1);
       }
     }
@@ -168,21 +170,42 @@ const ModelViewer = () => {
     checkeredTexture.magFilter = THREE.NearestFilter;
     checkeredTexture.minFilter = THREE.LinearMipMapLinearFilter;
 
-    // Create ground plane with checkered texture
     const groundGeometry = new THREE.PlaneGeometry(groundSize, groundSize);
     const groundMaterial = new THREE.MeshStandardMaterial({ map: checkeredTexture });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = 0;
+    ground.position.y = -0.01;
     ground.receiveShadow = true;
 
     scene.add(ground);
   }
 
   return (
-    <div id="viewer-container" style={{ display: 'flex', height: '100vh', background: '#333' }}>
-      <div id="model-container" style={{ width: '60%', height: '100vh', background: '#222' }}></div>
-      <div id="model-info" style={{ width: '40%', padding: '20px', color: '#fff', backgroundColor: '#2c2c2c' }}>
+    <div id="viewer-container" style={{ display: 'flex', height: '100vh', background: '#333', padding: '20px', gap: '20px' }}>
+      <div
+        id="model-container"
+        style={{
+          flex: 1,
+          background: '#2c2c2c', // Matching color to fit boundaries
+          borderRadius: '10px',
+          padding: '0', // Removed padding to ensure no extra space
+          overflow: 'hidden', // Prevent overflow to avoid exceeding boundaries
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.4)',
+          border: '1px solid #444',
+        }}
+      ></div>
+      <div
+        id="model-info"
+        style={{
+          width: '30%',
+          padding: '20px',
+          color: '#fff',
+          backgroundColor: '#2c2c2c',
+          borderRadius: '10px',
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.4)',
+          border: '1px solid #444',
+        }}
+      >
         <h2>Model Information</h2>
         <p><strong>Model Name:</strong> d20_fair_chamfered</p>
         <p><strong>Description:</strong> Detailed information about the model can be provided here.</p>
