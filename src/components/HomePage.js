@@ -2,6 +2,8 @@ import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DarkModeContext } from './Context/DarkModeContext';
 import './HomePage.css';
+import { Helmet } from 'react-helmet';
+
 
 const HomePage = () => {
   const { darkMode } = useContext(DarkModeContext);
@@ -18,6 +20,13 @@ const HomePage = () => {
   };
 
   return (
+    <>
+      {/* Helmet kullanarak başlığı güncelliyoruz */}
+      <Helmet>
+        <title>Craftedfromfilament - 3D Model Gallery</title>
+        <meta name="description" content="Discover handcrafted 3D models and more in our gallery." />
+      </Helmet>
+
     <div className="homepage-container">
       {/* Model Galerisi */}
       <div className={`gallery ${darkMode ? 'dark-mode' : ''}`}>
@@ -32,6 +41,7 @@ const HomePage = () => {
         ))}
       </div>
     </div>
+    </>
   );
 };
 
