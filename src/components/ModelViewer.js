@@ -3,10 +3,14 @@ import * as THREE from 'three';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { useLocation } from 'react-router-dom';
+import { Helmet } from 'react-helmet';
+
 
 const ModelViewer = () => {
   const location = useLocation();
   const modelPath = location.state?.modelPath;
+  const modelName = location.state?.modelName;
+
 
   useEffect(() => {
     if (!modelPath) {
@@ -181,37 +185,43 @@ const ModelViewer = () => {
   }
 
   return (
-    <div id="viewer-container" style={{ display: 'flex', height: '100vh', background: '#333', padding: '20px', gap: '20px' }}>
-      <div
-        id="model-container"
-        style={{
-          flex: 1,
-          background: '#2c2c2c', // Matching color to fit boundaries
-          borderRadius: '10px',
-          padding: '0', // Removed padding to ensure no extra space
-          overflow: 'hidden', // Prevent overflow to avoid exceeding boundaries
-          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.4)',
-          border: '1px solid #444',
-        }}
-      ></div>
-      <div
-        id="model-info"
-        style={{
-          width: '30%',
-          padding: '20px',
-          color: '#fff',
-          backgroundColor: '#2c2c2c',
-          borderRadius: '10px',
-          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.4)',
-          border: '1px solid #444',
-        }}
-      >
-        <h2>Model Information</h2>
-        <p><strong>Model Name:</strong> d20_fair_chamfered</p>
-        <p><strong>Description:</strong> Detailed information about the model can be provided here.</p>
-        <p><strong>Dimensions:</strong> Placeholder for dimensions, etc.</p>
+    <>
+      <Helmet>
+        <title>{modelName ? `${modelName} - 3D Model Viewer` : '3D Model Viewer'}</title>
+        <meta name="description" content={`View the 3D model of ${modelName}`} />
+      </Helmet>
+      <div id="viewer-container" style={{ display: 'flex', height: '100vh', background: '#333', padding: '20px', gap: '20px' }}>
+        <div
+          id="model-container"
+          style={{
+            flex: 1,
+            background: '#2c2c2c', // Matching color to fit boundaries
+            borderRadius: '10px',
+            padding: '0', // Removed padding to ensure no extra space
+            overflow: 'hidden', // Prevent overflow to avoid exceeding boundaries
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.4)',
+            border: '1px solid #444',
+          }}
+        ></div>
+        <div
+          id="model-info"
+          style={{
+            width: '30%',
+            padding: '20px',
+            color: '#fff',
+            backgroundColor: '#2c2c2c',
+            borderRadius: '10px',
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.4)',
+            border: '1px solid #444',
+          }}
+        >
+          <h2>Model Information</h2>
+          <p><strong>Model Name:</strong> d20_fair_chamfered</p>
+          <p><strong>Description:</strong> Detailed information about the model can be provided here.</p>
+          <p><strong>Dimensions:</strong> Placeholder for dimensions, etc.</p>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

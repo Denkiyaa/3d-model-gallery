@@ -1,7 +1,9 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import ModelGallery from './components/ModelGallery';
+import HomePage from './components/HomePage';
 import ModelViewer from './components/ModelViewer';
 import Header from './components/Header';
+import React from 'react';
+import './App.css';
 import { LanguageProvider } from './components/Context/LanguageContext';
 import { DarkModeProvider } from './components/Context/DarkModeContext';
 import './styles.css';
@@ -14,10 +16,8 @@ function App() {
           <div className="App">
             <Header />
             <Routes>
+              <Route path="/" element={<HomePage />} />
               {/* Route to the Model Gallery page */}
-              <Route path="/" element={<ModelGallery />} />
-
-              {/* Route to the Model Viewer page for the selected model */}
               <Route path="/model/:modelPath" element={<ModelViewer />} />
             </Routes>
           </div>
