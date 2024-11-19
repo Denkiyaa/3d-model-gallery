@@ -23,7 +23,7 @@ const HomePage = () => {
     <>
       {/* Helmet kullanarak başlığı güncelliyoruz */}
       <Helmet>
-        <title>Craftedfromfilament - 3D Model Gallery</title>
+        <title>Craftedfromfilament</title>
         <meta name="description" content="Discover handcrafted 3D models and more in our gallery." />
       </Helmet>
 
