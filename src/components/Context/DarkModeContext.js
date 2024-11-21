@@ -8,7 +8,13 @@ export const DarkModeProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    document.body.classList.toggle('dark-mode', isDarkMode);
+    if (isDarkMode) {
+      document.body.classList.add('dark-mode');
+      document.body.classList.remove('light-mode');
+    } else {
+      document.body.classList.add('light-mode');
+      document.body.classList.remove('dark-mode');
+    }
     localStorage.setItem('darkMode', isDarkMode ? 'enabled' : 'disabled');
   }, [isDarkMode]);
 

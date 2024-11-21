@@ -13,14 +13,14 @@ const Header = () => {
   }
 
   return (
-    <header className={`header ${isDarkMode ? 'dark-mode' : ''}`}>
+    <header className={`header ${isDarkMode ? 'dark-mode' : 'light-mode'}`}>
       {/* Make the title clickable to go back to the main page */}
-      <Link to="/" style={{ color: '#fff', textDecoration: 'none', fontSize: '24px', fontWeight: 'bold' }}>
+      <Link to="/" className="site-title">
         Craftedfromfilament
       </Link>
       <div className="settings-container">
         <button id="dark-mode-toggle" onClick={toggleDarkMode}>
-          {isDarkMode ? '🌞' : '🌙'}
+          {isDarkMode ? '☀️' : '🌙'}
         </button>
         <button id="language-toggle" onClick={toggleLanguage}>
           {currentLanguage.toUpperCase()}
