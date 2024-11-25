@@ -13,7 +13,6 @@ import WebGL from 'three/examples/jsm/capabilities/WebGL.js';
 const ModelViewer = () => {
   const { isDarkMode: darkMode } = useContext(DarkModeContext);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showAxes, setShowAxes] = useState(true);
   const [currentView, setCurrentView] = useState('model');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -92,36 +91,6 @@ const ModelViewer = () => {
       labelRenderer.domElement.style.top = '0';
       labelRenderer.domElement.style.pointerEvents = 'none';
       container.appendChild(labelRenderer.domElement);
-
-      let coordDiv;
-      
-      if (showAxes) {
-        // Remove the axesHelper since we don't want the center lines
-        // const axesHelper = new THREE.AxesHelper(50);
-        // scene.add(axesHelper);
-
-        // Create coordinate info div in bottom-left corner with better styling
-        coordDiv = document.createElement('div');
-        coordDiv.style.position = 'absolute';
-        coordDiv.style.bottom = '20px';
-        coordDiv.style.left = '20px';
-        coordDiv.style.padding = '8px 12px';
-        coordDiv.style.background = darkMode ? 'rgba(0,0,0,0.75)' : 'rgba(255,255,255,0.9)';
-        coordDiv.style.borderRadius = '6px';
-        coordDiv.style.fontSize = '14px';
-        coordDiv.style.fontFamily = 'monospace';
-        coordDiv.style.color = darkMode ? '#fff' : '#000';
-        coordDiv.style.zIndex = '1000';
-        coordDiv.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-        coordDiv.innerHTML = `
-          <div style="display: flex; gap: 15px; align-items: center;">
-            <span style="color: #ff4444; font-weight: bold;">X</span>
-            <span style="color: #44ff44; font-weight: bold;">Y</span>
-            <span style="color: #4444ff; font-weight: bold;">Z</span>
-          </div>
-        `;
-        container.appendChild(coordDiv);
-      }
 
       // Orbit Controls with optimized settings for smoother and longer spins
       const controls = new OrbitControls(camera, renderer.domElement);
@@ -259,9 +228,6 @@ const ModelViewer = () => {
         if (labelRenderer && labelRenderer.domElement && container.contains(labelRenderer.domElement)) {
           container.removeChild(labelRenderer.domElement);
         }
-        if (coordDiv && container.contains(coordDiv)) {
-          container.removeChild(coordDiv);
-        }
         window.removeEventListener('resize', handleResize);
       };
     } catch (error) {
@@ -376,6 +342,12 @@ const ModelViewer = () => {
       container.innerHTML = '';
     }
   }, [currentView]);
+
+  // Reset view to model when route/model changes
+  useEffect(() => {
+    setCurrentView('model');
+    setCurrentImageIndex(0);
+  }, [modelId]); // Add modelId as dependency to reset when model changes
 
   return (
     <>
