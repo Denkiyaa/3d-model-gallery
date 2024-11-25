@@ -45,6 +45,7 @@ const HomePage = () => {
               key={model.id}
               to={`/model/${model.id}`}
               state={{ modelId: model.id }}
+              style={{ textDecoration: 'none' }}
             >
               <div className="model-card" onClick={() => handleModelClick(model)}>
                 <img src={model.thumbnailPath} alt={`Thumbnail for ${model.name}`} className="thumbnail" />

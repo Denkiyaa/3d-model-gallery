@@ -587,7 +587,7 @@ const ModelViewer = () => {
             id="model-info"
             style={{
               flex: '1',
-              padding: '24px', // Increased padding
+              padding: '24px',
               color: darkMode ? '#e5e7eb' : '#1f2937',
               backgroundColor: darkMode ? '#242424' : '#ffffff',
               borderRadius: '12px',
@@ -597,22 +597,25 @@ const ModelViewer = () => {
             <h2 style={{ 
               marginTop: 0,
               marginBottom: '24px',
-              fontSize: '26px', // Increased size
-              fontWeight: '600'
+              fontSize: '26px',
+              fontWeight: '600',
+              textDecoration: 'none'
             }}>
               Model Information
             </h2>
             <div className="info-section">
               <h3 style={{ 
-                fontSize: '18px', // Increased size
+                fontSize: '18px',
                 color: darkMode ? '#9ca3af' : '#666',
-                marginBottom: '12px' 
+                marginBottom: '12px',
+                textDecoration: 'none'
               }}>
                 Model Name
               </h3>
               <p style={{ 
-                fontSize: '20px', // Increased size
-                marginBottom: '24px' 
+                fontSize: '20px',
+                marginBottom: '24px',
+                textDecoration: 'none'
               }}>
                 {modelName}
               </p>
@@ -620,14 +623,16 @@ const ModelViewer = () => {
               <h3 style={{ 
                 fontSize: '18px',
                 color: darkMode ? '#9ca3af' : '#666',
-                marginBottom: '12px' 
+                marginBottom: '12px',
+                textDecoration: 'none'
               }}>
                 Description
               </h3>
               <p style={{ 
                 fontSize: '16px',
                 lineHeight: '1.6',
-                color: darkMode ? '#d1d5db' : '#4b5563' 
+                color: darkMode ? '#d1d5db' : '#4b5563',
+                textDecoration: 'none'
               }}>
                 {modelDescription || 'No description available.'}
               </p>
