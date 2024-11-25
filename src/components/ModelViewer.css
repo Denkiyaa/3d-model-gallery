@@ -15,4 +15,11 @@
   .model-info {
     text-align: center;
   }
+
+  .axis-label {
+    padding: 2px 4px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 3px;
+    user-select: none;
+  }
   
