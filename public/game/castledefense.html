@@ -223,6 +223,29 @@
             }
         }
 
+        function ensureHit() {
+            arrows.forEach((arrow) => {
+                const target = enemies.find(enemy => 
+                    arrow.x < enemy.x + enemy.width && 
+                    arrow.x > enemy.x && 
+                    arrow.y < enemy.y + enemy.height && 
+                    arrow.y > enemy.y
+                );
+
+                if (target) {
+                    target.health -= damage;
+                    if (target.health <= 0) {
+                        const targetIndex = enemies.indexOf(target);
+                        enemies.splice(targetIndex, 1);
+                        score++;
+                        gold += 10;
+                        scoreDisplay.textContent = score;
+                        goldDisplay.textContent = gold;
+                    }
+                }
+            });
+        }
+
         function upgrade(attribute) {
             if (attribute === 'damage' && gold >= 3) {
                 damage += 2; // Increase damage
@@ -243,6 +266,7 @@
             drawArrows();
             drawEnemies();
             autoAttack();
+            ensureHit();
             requestAnimationFrame(gameLoop);
         }
 
