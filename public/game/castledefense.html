@@ -159,16 +159,39 @@
 
         function drawArrows() {
             arrows.forEach((arrow, index) => {
-                arrow.x += arrow.speed * Math.cos(arrow.angle);
-                arrow.y += arrow.speed * Math.sin(arrow.angle);
+                if (arrow.target.health <= 0) {
+                    arrows.splice(index, 1);
+                    return;
+                }
+
+                const dx = arrow.target.x + arrow.target.width / 2 - arrow.x;
+                const dy = arrow.target.y + arrow.target.height / 2 - arrow.y;
+                const angle = Math.atan2(dy, dx);
+
+                arrow.x += arrow.speed * Math.cos(angle);
+                arrow.y += arrow.speed * Math.sin(angle);
+
                 ctx.save();
                 ctx.translate(arrow.x, arrow.y);
                 ctx.fillStyle = '#8B4513';
                 ctx.fillRect(-5, -2, 10, 4);
                 ctx.restore();
 
-                if (arrow.x > canvas.width || arrow.y < 0 || arrow.y > canvas.height) {
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < 10) {
+                    arrow.target.health -= damage;
                     arrows.splice(index, 1);
+
+                    if (arrow.target.health <= 0) {
+                        const targetIndex = enemies.indexOf(arrow.target);
+                        if (targetIndex > -1) {
+                            enemies.splice(targetIndex, 1);
+                            score++;
+                            gold += 10;
+                            scoreDisplay.textContent = score;
+                            goldDisplay.textContent = gold;
+                        }
+                    }
                 }
             });
         }
@@ -181,7 +204,7 @@
                     width: 50,
                     height: 50,
                     speedX: -2 - wave * 0.5,
-                    health: 1 + wave,
+                    health: 3 + wave,
                 });
                 enemiesRemaining--;
                 if (enemiesRemaining <= 0) spawningEnemies = false;
@@ -209,25 +232,6 @@
                         document.location.reload();
                     }
                 }
-
-                arrows.forEach((arrow, aIndex) => {
-                    if (
-                        arrow.x < enemy.x + enemy.width &&
-                        arrow.x > enemy.x &&
-                        arrow.y < enemy.y + enemy.height &&
-                        arrow.y > enemy.y
-                    ) {
-                        enemy.health -= damage;
-                        arrows.splice(aIndex, 1);
-                        if (enemy.health <= 0) {
-                            enemies.splice(index, 1);
-                            score++;
-                            gold += 10; // Earn 10 gold per enemy killed
-                            scoreDisplay.textContent = score;
-                            goldDisplay.textContent = gold;
-                        }
-                    }
-                });
             });
 
             if (enemies.length === 0 && !spawningEnemies) {
@@ -242,15 +246,16 @@
             const currentTime = Date.now();
             if (currentTime - player.lastAttackTime >= attackSpeed) {
                 if (enemies.length > 0) {
-                    const target = enemies[0]; // Target the first enemy
-                    const angle = Math.atan2(target.y + target.height / 2 - (player.y + player.height / 2), target.x - (player.x + player.width));
-                    arrows.push({
-                        x: player.x + player.width,
-                        y: player.y + player.height / 2 - 2,
-                        speed: 5,
-                        angle: angle
-                    });
-                    player.lastAttackTime = currentTime;
+                    const target = enemies.find(enemy => enemy.health > 0); // Find the first alive enemy
+                    if (target) {
+                        arrows.push({
+                            x: player.x + player.width,
+                            y: player.y + player.height / 2 - 2,
+                            speed: 10, // Speed for guided movement
+                            target: target // Attach target to the arrow
+                        });
+                        player.lastAttackTime = currentTime;
+                    }
                 }
             }
         }
