@@ -24,6 +24,16 @@
             padding: 10px;
             border-radius: 5px;
         }
+        #wave-status {
+            position: fixed;
+            top: 50px;
+            left: 10px;
+            color: yellow;
+            font-size: 18px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px;
+            border-radius: 5px;
+        }
         .upgrade-button {
             position: fixed;
             bottom: 10px;
@@ -63,6 +73,7 @@
 </head>
 <body>
     <div id="hud">Score: <span id="score">0</span> | Lives: <span id="lives">5</span> | Gold: <span id="gold">0</span></div>
+    <div id="wave-status">Wave 1</div>
     <canvas id="gameCanvas"></canvas>
 
     <button class="upgrade-button" onclick="upgrade('damage')">
@@ -80,6 +91,7 @@
         const scoreDisplay = document.getElementById('score');
         const livesDisplay = document.getElementById('lives');
         const goldDisplay = document.getElementById('gold');
+        const waveStatus = document.getElementById('wave-status');
 
         function resizeCanvas() {
             const width = window.innerWidth;
@@ -103,6 +115,9 @@
         let enemies = [];
         let damage = 1;
         let attackSpeed = 1000;
+        let wave = 1;
+        let enemiesRemaining = 5;
+        let spawningEnemies = true;
 
         const groundImage = new Image();
         groundImage.src = 'ground_pattern.png';
@@ -159,20 +174,30 @@
         }
 
         function spawnEnemy() {
-            enemies.push({
-                x: canvas.width - 50,
-                y: Math.random() * canvas.height,
-                width: 50,
-                height: 50,
-                speedX: -2 - Math.random() * 2,
-                health: 5
-            });
+            if (spawningEnemies) {
+                enemies.push({
+                    x: canvas.width - 50,
+                    y: Math.random() * canvas.height,
+                    width: 50,
+                    height: 50,
+                    speedX: -2 - wave * 0.5,
+                    health: 3 + wave,
+                });
+                enemiesRemaining--;
+                if (enemiesRemaining <= 0) spawningEnemies = false;
+            }
         }
 
         function drawEnemies() {
             enemies.forEach((enemy, index) => {
                 enemy.x += enemy.speedX;
                 ctx.drawImage(enemyImage, enemy.x, enemy.y, enemy.width, enemy.height);
+
+                // Health bar
+                ctx.fillStyle = 'red';
+                ctx.fillRect(enemy.x, enemy.y - 10, enemy.width, 5);
+                ctx.fillStyle = 'green';
+                ctx.fillRect(enemy.x, enemy.y - 10, (enemy.health / (3 + wave)) * enemy.width, 5);
 
                 if (enemy.x < 0) {
                     enemies.splice(index, 1);
@@ -204,6 +229,13 @@
                     }
                 });
             });
+
+            if (enemies.length === 0 && !spawningEnemies) {
+                wave++;
+                enemiesRemaining = 5 + wave * 2;
+                spawningEnemies = true;
+                waveStatus.textContent = `Wave ${wave}`;
+            }
         }
 
         function autoAttack() {
@@ -221,29 +253,6 @@
                     player.lastAttackTime = currentTime;
                 }
             }
-        }
-
-        function ensureHit() {
-            arrows.forEach((arrow) => {
-                const target = enemies.find(enemy => 
-                    arrow.x < enemy.x + enemy.width && 
-                    arrow.x > enemy.x && 
-                    arrow.y < enemy.y + enemy.height && 
-                    arrow.y > enemy.y
-                );
-
-                if (target) {
-                    target.health -= damage;
-                    if (target.health <= 0) {
-                        const targetIndex = enemies.indexOf(target);
-                        enemies.splice(targetIndex, 1);
-                        score++;
-                        gold += 10;
-                        scoreDisplay.textContent = score;
-                        goldDisplay.textContent = gold;
-                    }
-                }
-            });
         }
 
         function upgrade(attribute) {
@@ -266,7 +275,6 @@
             drawArrows();
             drawEnemies();
             autoAttack();
-            ensureHit();
             requestAnimationFrame(gameLoop);
         }
 
