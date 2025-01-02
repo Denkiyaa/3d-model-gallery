@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Castle Defense Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #87CEEB;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+        #hud {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .upgrade-button {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            margin: 5px;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .upgrade-button:hover {
+            background-color: #45a049;
+        }
+        .tooltip {
+            visibility: hidden;
+            background-color: black;
+            color: #fff;
+            text-align: center;
+            padding: 5px;
+            border-radius: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 100%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .upgrade-button:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="hud">Score: <span id="score">0</span> | Lives: <span id="lives">5</span> | Gold: <span id="gold">0</span></div>
+    <canvas id="gameCanvas"></canvas>
+
+    <button class="upgrade-button" onclick="upgrade('damage')">
+        Upgrade Damage
+        <div class="tooltip">Cost: 3 Gold<br>Effect: +2 Damage</div>
+    </button>
+    <button class="upgrade-button" style="right: 120px;" onclick="upgrade('attackSpeed')">
+        Upgrade Attack Speed
+        <div class="tooltip">Cost: 5 Gold<br>Effect: Faster Attacks</div>
+    </button>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const livesDisplay = document.getElementById('lives');
+        const goldDisplay = document.getElementById('gold');
+
+        function resizeCanvas() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const aspect = 16 / 9;
+
+            if (width / height > aspect) {
+                canvas.width = height * aspect;
+                canvas.height = height;
+            } else {
+                canvas.width = width;
+                canvas.height = width / aspect;
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let score = 0;
+        let lives = 5;
+        let gold = 0;
+        let enemies = [];
+        let damage = 1;
+        let attackSpeed = 1000;
+
+        const groundImage = new Image();
+        groundImage.src = 'ground_pattern.png';
+
+        const castleImage = new Image();
+        castleImage.src = 'castle.png';
+
+        const enemyImage = new Image();
+        enemyImage.src = 'enemy.png';
+
+        const player = {
+            x: 150,
+            y: canvas.height / 2 - 50,
+            width: 50,
+            height: 50,
+            color: '#000',
+            lastAttackTime: 0
+        };
+
+        const arrows = [];
+
+        function drawGround() {
+            const pattern = ctx.createPattern(groundImage, 'repeat');
+            ctx.fillStyle = pattern;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawCastle() {
+            ctx.drawImage(castleImage, 0, canvas.height * 0.5 - 150, 150, 300);
+        }
+
+        function drawPlayer() {
+            ctx.save();
+            ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
+            ctx.fillStyle = player.color;
+            ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
+            ctx.restore();
+        }
+
+        function drawArrows() {
+            arrows.forEach((arrow, index) => {
+                arrow.x += arrow.speed * Math.cos(arrow.angle);
+                arrow.y += arrow.speed * Math.sin(arrow.angle);
+                ctx.save();
+                ctx.translate(arrow.x, arrow.y);
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(-5, -2, 10, 4);
+                ctx.restore();
+
+                if (arrow.x > canvas.width || arrow.y < 0 || arrow.y > canvas.height) {
+                    arrows.splice(index, 1);
+                }
+            });
+        }
+
+        function spawnEnemy() {
+            enemies.push({
+                x: canvas.width - 50,
+                y: Math.random() * canvas.height,
+                width: 50,
+                height: 50,
+                speedX: -2 - Math.random() * 2,
+                health: 5
+            });
+        }
+
+        function drawEnemies() {
+            enemies.forEach((enemy, index) => {
+                enemy.x += enemy.speedX;
+                ctx.drawImage(enemyImage, enemy.x, enemy.y, enemy.width, enemy.height);
+
+                if (enemy.x < 0) {
+                    enemies.splice(index, 1);
+                    lives--;
+                    livesDisplay.textContent = lives;
+
+                    if (lives <= 0) {
+                        alert('Game Over! Your Score: ' + score);
+                        document.location.reload();
+                    }
+                }
+
+                arrows.forEach((arrow, aIndex) => {
+                    if (
+                        arrow.x < enemy.x + enemy.width &&
+                        arrow.x > enemy.x &&
+                        arrow.y < enemy.y + enemy.height &&
+                        arrow.y > enemy.y
+                    ) {
+                        enemy.health -= damage;
+                        arrows.splice(aIndex, 1);
+                        if (enemy.health <= 0) {
+                            enemies.splice(index, 1);
+                            score++;
+                            gold += 10; // Earn 10 gold per enemy killed
+                            scoreDisplay.textContent = score;
+                            goldDisplay.textContent = gold;
+                        }
+                    }
+                });
+            });
+        }
+
+        function autoAttack() {
+            const currentTime = Date.now();
+            if (currentTime - player.lastAttackTime >= attackSpeed) {
+                if (enemies.length > 0) {
+                    const target = enemies[0]; // Target the first enemy
+                    const angle = Math.atan2(target.y + target.height / 2 - (player.y + player.height / 2), target.x - (player.x + player.width));
+                    arrows.push({
+                        x: player.x + player.width,
+                        y: player.y + player.height / 2 - 2,
+                        speed: 5,
+                        angle: angle
+                    });
+                    player.lastAttackTime = currentTime;
+                }
+            }
+        }
+
+        function upgrade(attribute) {
+            if (attribute === 'damage' && gold >= 3) {
+                damage += 2; // Increase damage
+                gold -= 3;
+                goldDisplay.textContent = gold;
+            } else if (attribute === 'attackSpeed' && gold >= 5) {
+                attackSpeed = Math.max(200, attackSpeed - 100); // Faster attacks
+                gold -= 5;
+                goldDisplay.textContent = gold;
+            }
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGround();
+            drawCastle();
+            drawPlayer();
+            drawArrows();
+            drawEnemies();
+            autoAttack();
+            requestAnimationFrame(gameLoop);
+        }
+
+        setInterval(spawnEnemy, 1000);
+        gameLoop();
+    </script>
+</body>
+</html>
