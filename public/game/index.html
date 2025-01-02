@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Castle Defense Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="hud">Score: <span id="score">0</span> | Lives: <span id="lives">5</span> | Gold: <span id="gold">0</span></div>
+    <div id="wave-status">Wave 1</div>
+    <canvas id="gameCanvas"></canvas>
+    <div class="upgrade-buttons">
+        <button class="upgrade-button" onclick="upgrade('damage')">
+            +
+            <div class="tooltip">Increase Damage<br>Cost: <span id="damage-cost">3</span> Gold</div>
+        </button>
+        <button class="upgrade-button" onclick="upgrade('attackSpeed')">
+            ⏩
+            <div class="tooltip">Increase Attack Speed<br>Cost: <span id="speed-cost">5</span> Gold</div>
+        </button>
+    </div>
+    <script src="/game/game.js"></script>
+</body>
+</html>
