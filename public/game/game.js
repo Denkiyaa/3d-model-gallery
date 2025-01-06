@@ -1,215 +1,297 @@
-// Complete game.js logic
+import { GAME_CONFIG } from './config.js';
+import { Player } from './Player.js';
+import { WaveManager } from './WaveManager.js';
+import { CardSystem } from './CardSystem.js';
 
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const scoreDisplay = document.getElementById('score');
-const livesDisplay = document.getElementById('lives');
-const goldDisplay = document.getElementById('gold');
-const waveStatus = document.getElementById('wave-status');
-const damageCostDisplay = document.getElementById('damage-cost');
-const speedCostDisplay = document.getElementById('speed-cost');
-
-function resizeCanvas() {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    const aspect = 16 / 9;
-
-    if (width / height > aspect) {
-        canvas.width = height * aspect;
-        canvas.height = height;
-    } else {
-        canvas.width = width;
-        canvas.height = width / aspect;
+export class Game {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        
+        // Canvas boyutlarını ayarla
+        this.canvas.width = window.innerWidth - GAME_CONFIG.CANVAS_PADDING * 2;
+        this.canvas.height = window.innerHeight - GAME_CONFIG.CANVAS_PADDING * 2;
+        
+        this.lives = GAME_CONFIG.INITIAL_LIVES;
+        this.score = 0;
+        this.enemies = [];
+        this.arrows = [];
+        
+        this.player = new Player(this.canvas);
+        this.player.game = this;
+        
+        this.waveManager = new WaveManager(this);
+        this.cardSystem = new CardSystem(this);
+        
+        // İlk wave'i başlat
+        this.waveManager.spawnEnemy();
+        
+        this.maxHealth = 100;
+        this.currentHealth = this.maxHealth;
+        
+        // Health bar oluştur
+        this.createHealthBar();
+        
+        // Game loop'u başlat
+        this.gameLoop();
     }
-}
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
 
-let score = 0;
-let lives = 5;
-let gold = 0;
-let enemies = [];
-let damage = 1;
-let attackSpeed = 1000;
-let wave = 1;
-let enemiesRemaining = 5;
-let spawningEnemies = true;
+    gameLoop = () => {
+        this.update();
+        this.draw();
+        requestAnimationFrame(this.gameLoop);
+    }
 
-let damageCost = 3;
-let speedCost = 5;
-
-const groundImage = new Image();
-groundImage.src = '/game/ground_pattern.png';
-
-const castleImage = new Image();
-castleImage.src = '/game/castle.png';
-
-const enemyImage = new Image();
-enemyImage.src = '/game/enemy.png';
-
-const player = {
-    x: 150,
-    y: canvas.height / 2 - 50,
-    width: 50,
-    height: 50,
-    color: '#000',
-    lastAttackTime: 0
-};
-
-const arrows = [];
-
-function drawGround() {
-    const pattern = ctx.createPattern(groundImage, 'repeat');
-    ctx.fillStyle = pattern;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-}
-
-function drawCastle() {
-    ctx.drawImage(castleImage, 0, canvas.height * 0.5 - 150, 150, 300);
-}
-
-function drawPlayer() {
-    ctx.save();
-    ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
-    ctx.fillStyle = player.color;
-    ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
-    ctx.restore();
-}
-
-function drawArrows() {
-    arrows.forEach((arrow, index) => {
-        if (arrow.target.health <= 0) {
-            arrows.splice(index, 1);
-            return;
-        }
-
-        const dx = arrow.target.x + arrow.target.width / 2 - arrow.x;
-        const dy = arrow.target.y + arrow.target.height / 2 - arrow.y;
-        const angle = Math.atan2(dy, dx);
-
-        arrow.x += arrow.speed * Math.cos(angle);
-        arrow.y += arrow.speed * Math.sin(angle);
-
-        ctx.save();
-        ctx.translate(arrow.x, arrow.y);
-        ctx.fillStyle = '#8B4513';
-        ctx.fillRect(-5, -2, 10, 4);
-        ctx.restore();
-
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < 10) {
-            arrow.target.health -= damage;
-            arrows.splice(index, 1);
-
-            if (arrow.target.health <= 0) {
-                const targetIndex = enemies.indexOf(arrow.target);
-                if (targetIndex > -1) {
-                    enemies.splice(targetIndex, 1);
-                    score++;
-                    gold += 10;
-                    scoreDisplay.textContent = score;
-                    goldDisplay.textContent = gold;
-                }
+    update() {
+        if (this.cardSystem.isChoosingCard) return;
+        
+        // Update player
+        this.player.update();
+        
+        // Update enemies and check collisions
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+            const enemy = this.enemies[i];
+            
+            // Düşman kaleye ulaştı mı?
+            if (enemy.x <= GAME_CONFIG.CASTLE_X) {
+                this.currentHealth -= enemy.damage;
+                this.updateHealthBar();
+                this.enemies.splice(i, 1);
+                continue;
+            }
+            
+            enemy.update();
+            
+            // Düşman öldü mü?
+            if (enemy.health <= 0) {
+                this.enemies.splice(i, 1);
+                this.score += 10;
+                this.updateScore();
+                continue;
             }
         }
-    });
-}
+        
+        // Update arrows and check collisions
+        for (let i = this.arrows.length - 1; i >= 0; i--) {
+            const arrow = this.arrows[i];
+            arrow.update();
+            
+            // Ok ekrandan çıktı mı?
+            if (arrow.x > this.canvas.width || arrow.x < 0 || 
+                arrow.y > this.canvas.height || arrow.y < 0) {
+                this.arrows.splice(i, 1);
+                continue;
+            }
+            
+            // Hedef düşman ölmüş mü?
+            if (!this.enemies.includes(arrow.target)) {
+                this.arrows.splice(i, 1);
+                continue;
+            }
+            
+            // Ok düşmana çarptı mı?
+            if (this.checkCollision(arrow, arrow.target)) {
+                const damage = arrow.critical ? this.player.damage * 2 : this.player.damage;
+                arrow.target.health -= damage;
+                this.arrows.splice(i, 1);
+            }
+        }
+        
+        // Wave completion check with debug logs
+        if (this.enemies.length === 0) {
+            console.log('Düşman kalmadı');
+            console.log('isSpawning:', this.waveManager.isSpawning);
+            console.log('isChoosingCard:', this.cardSystem.isChoosingCard);
+            console.log('currentWave:', this.waveManager.currentWave);
+            
+            if (!this.waveManager.isSpawning && 
+                !this.cardSystem.isChoosingCard && 
+                this.waveManager.currentWave < 100) {
+                console.log('Kart seçim ekranı gösterilecek');
+                this.cardSystem.showCardSelection();
+            }
+        }
+    }
 
-function spawnEnemy() {
-    if (spawningEnemies) {
-        const isBoss = wave === 5 && enemiesRemaining === 1; // Spawn boss on wave 5
-        enemies.push({
-            x: canvas.width - 50,
-            y: Math.random() * canvas.height,
-            width: isBoss ? 100 : 50,
-            height: isBoss ? 100 : 50,
-            speedX: isBoss ? -1.5 : -2 - wave * 0.5,
-            health: isBoss ? 50 : 3 + wave, // Adjust health for boss
+    checkCollision(arrow, enemy) {
+        return arrow.x < enemy.x + enemy.width &&
+               arrow.x + arrow.width > enemy.x &&
+               arrow.y < enemy.y + enemy.height &&
+               arrow.y + arrow.height > enemy.y;
+    }
+
+    draw() {
+        // Gökyüzü gradyanı
+        const skyGradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height * 0.6);
+        skyGradient.addColorStop(0, '#87CEEB');    // Açık mavi
+        skyGradient.addColorStop(1, '#E0F6FF');    // Beyazımsı mavi
+        this.ctx.fillStyle = skyGradient;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height * 0.6);
+
+        // Zemin gradyanı
+        const groundGradient = this.ctx.createLinearGradient(0, this.canvas.height * 0.6, 0, this.canvas.height);
+        groundGradient.addColorStop(0, '#4a8505');  // Koyu yeşil
+        groundGradient.addColorStop(1, '#3a6804');  // Daha koyu yeşil
+        this.ctx.fillStyle = groundGradient;
+        this.ctx.fillRect(0, this.canvas.height * 0.6, this.canvas.width, this.canvas.height * 0.4);
+
+        // Yol çizimi
+        this.ctx.fillStyle = '#8B4513';  // Kahverengi yol
+        this.ctx.fillRect(0, this.canvas.height * 0.7, this.canvas.width, this.canvas.height * 0.15);
+
+        // Yol detayları
+        this.ctx.fillStyle = '#654321';  // Koyu kahverengi
+        for(let i = 0; i < this.canvas.width; i += 50) {
+            this.ctx.fillRect(i, this.canvas.height * 0.7, 2, this.canvas.height * 0.15);
+        }
+
+        // Bulutlar
+        this.drawClouds();
+
+        // Ağaçlar
+        this.drawTrees();
+
+        // Kale
+        this.drawCastle();
+
+        // Oyun objeleri
+        this.player.draw(this.ctx);
+        this.enemies.forEach(enemy => enemy.draw(this.ctx));
+        this.arrows.forEach(arrow => arrow.draw(this.ctx));
+    }
+
+    drawClouds() {
+        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        // Sabit bulut pozisyonları
+        const cloudPositions = [
+            {x: 100, y: 50},
+            {x: 300, y: 80},
+            {x: 600, y: 60},
+            {x: 900, y: 70}
+        ];
+
+        cloudPositions.forEach(pos => {
+            this.ctx.beginPath();
+            this.ctx.arc(pos.x, pos.y, 20, 0, Math.PI * 2);
+            this.ctx.arc(pos.x - 15, pos.y + 10, 20, 0, Math.PI * 2);
+            this.ctx.arc(pos.x + 15, pos.y + 10, 20, 0, Math.PI * 2);
+            this.ctx.fill();
         });
-        enemiesRemaining--;
-        if (enemiesRemaining <= 0) spawningEnemies = false;
     }
-}
 
-function drawEnemies() {
-    enemies.forEach((enemy, index) => {
-        enemy.x += enemy.speedX;
-        ctx.drawImage(enemyImage, enemy.x, enemy.y, enemy.width, enemy.height);
+    drawTrees() {
+        // Sabit ağaç pozisyonları
+        const treePositions = [
+            {x: 150, y: this.canvas.height * 0.6},
+            {x: 450, y: this.canvas.height * 0.6},
+            {x: 750, y: this.canvas.height * 0.6},
+            {x: 1050, y: this.canvas.height * 0.6}
+        ];
 
+        treePositions.forEach(pos => {
+            // Gövde
+            this.ctx.fillStyle = '#4B3621';
+            this.ctx.fillRect(pos.x - 10, pos.y - 60, 20, 60);
+
+            // Yapraklar
+            this.ctx.fillStyle = '#228B22';
+            this.ctx.beginPath();
+            this.ctx.moveTo(pos.x, pos.y - 120);
+            this.ctx.lineTo(pos.x - 30, pos.y - 60);
+            this.ctx.lineTo(pos.x + 30, pos.y - 60);
+            this.ctx.fill();
+
+            this.ctx.beginPath();
+            this.ctx.moveTo(pos.x, pos.y - 100);
+            this.ctx.lineTo(pos.x - 40, pos.y - 30);
+            this.ctx.lineTo(pos.x + 40, pos.y - 30);
+            this.ctx.fill();
+        });
+    }
+
+    drawCastle() {
+        const castleX = GAME_CONFIG.CASTLE_X;
+        const castleWidth = GAME_CONFIG.CASTLE_WIDTH;
+        const castleHeight = this.canvas.height;
+
+        // Ana kale yapısı
+        this.ctx.fillStyle = '#808080';
+        this.ctx.fillRect(castleX, 0, castleWidth, castleHeight);
+
+        // Kale detayları
+        this.ctx.fillStyle = '#696969';
+        // Mazgallar
+        for(let y = 50; y < castleHeight; y += 100) {
+            this.ctx.fillRect(castleX - 5, y, castleWidth + 10, 20);
+        }
+
+        // Kale tepesi
+        this.ctx.fillStyle = '#A0522D';
+        for(let i = 0; i < 5; i++) {
+            this.ctx.fillRect(
+                castleX + (i * (castleWidth/4)), 
+                0, 
+                castleWidth/8, 
+                40
+            );
+        }
+    }
+
+    drawUI() {
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '20px Arial';
+        this.ctx.fillText(`Lives: ${this.lives}`, 10, 30);
+        this.ctx.fillText(`Score: ${this.score}`, 10, 60);
+    }
+
+    createHealthBar() {
+        // Ana container
+        const healthContainer = document.createElement('div');
+        healthContainer.className = 'health-container';
+        
+        // Health label
+        const healthLabel = document.createElement('div');
+        healthLabel.className = 'health-label';
+        healthLabel.textContent = 'CASTLE HEALTH';
+        
         // Health bar
-        ctx.fillStyle = 'red';
-        ctx.fillRect(enemy.x, enemy.y - 10, enemy.width, 5);
-        ctx.fillStyle = 'green';
-        ctx.fillRect(enemy.x, enemy.y - 10, (enemy.health / (enemy.width === 100 ? 50 : 3 + wave)) * enemy.width, 5);
-
-        if (enemy.x < 0) {
-            enemies.splice(index, 1);
-            lives--;
-            livesDisplay.textContent = lives;
-
-            if (lives <= 0) {
-                gameOver();
-            }
-        }
-    });
-
-    if (enemies.length === 0 && !spawningEnemies) {
-        wave++;
-        enemiesRemaining = 5 + wave * 2;
-        spawningEnemies = true;
-        waveStatus.textContent = `Wave ${wave}`;
+        const healthBar = document.createElement('div');
+        healthBar.className = 'health-bar';
+        
+        const healthFill = document.createElement('div');
+        healthFill.className = 'health-fill';
+        
+        // Score display
+        const scoreDisplay = document.createElement('div');
+        scoreDisplay.className = 'score-display';
+        scoreDisplay.textContent = `Score: ${this.score}`;
+        this.scoreDisplay = scoreDisplay; // Score'u güncelleyebilmek için referansı sakla
+        
+        // Elementleri birleştir
+        healthBar.appendChild(healthFill);
+        healthContainer.appendChild(healthLabel);
+        healthContainer.appendChild(healthBar);
+        healthContainer.appendChild(scoreDisplay);
+        document.body.appendChild(healthContainer);
+        
+        this.healthFill = healthFill;
     }
-}
 
-function autoAttack() {
-    const currentTime = Date.now();
-    if (currentTime - player.lastAttackTime >= attackSpeed) {
-        if (enemies.length > 0) {
-            const target = enemies.find(enemy => enemy.health > 0); // Target only alive enemies
-            if (target) {
-                arrows.push({
-                    x: player.x + player.width,
-                    y: player.y + player.height / 2 - 2,
-                    speed: 10,
-                    target: target
-                });
-                player.lastAttackTime = currentTime;
-            }
+    updateHealthBar() {
+        const percentage = (this.currentHealth / this.maxHealth) * 100;
+        this.healthFill.style.width = `${percentage}%`;
+        
+        if (this.currentHealth <= 0) {
+            // Game Over logic here
+            console.log('Game Over!');
+        }
+    }
+
+    // Score'u güncellemek için yeni metod
+    updateScore() {
+        if (this.scoreDisplay) {
+            this.scoreDisplay.textContent = `Score: ${this.score}`;
         }
     }
 }
 
-function upgrade(attribute) {
-    if (attribute === 'damage' && gold >= damageCost) {
-        damage += 2;
-        gold -= damageCost;
-        damageCost += 2; // Increase cost after each upgrade
-        goldDisplay.textContent = gold;
-        damageCostDisplay.textContent = damageCost;
-    } else if (attribute === 'attackSpeed' && gold >= speedCost) {
-        attackSpeed = Math.max(200, attackSpeed - 100);
-        gold -= speedCost;
-        speedCost += 3; // Increase cost after each upgrade
-        goldDisplay.textContent = gold;
-        speedCostDisplay.textContent = speedCost;
-    }
-}
-
-function gameOver() {
-    alert('Game Over! Your Score: ' + score);
-    document.location.reload();
-}
-
-function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawGround();
-    drawCastle();
-    drawPlayer();
-    drawArrows();
-    drawEnemies();
-    autoAttack();
-    requestAnimationFrame(gameLoop);
-}
-
-setInterval(spawnEnemy, 1000);
-gameLoop();
