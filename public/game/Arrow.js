@@ -1,40 +1,46 @@
 export class Arrow {
-    constructor(x, y, target, speed = 10, critical = false) {
+    constructor(x, y, target, speed = 10) {
         this.x = x;
         this.y = y;
         this.target = target;
         this.speed = speed;
-        this.critical = critical;
         this.width = 10;
         this.height = 4;
+        this.isActive = true;
+
+        // Düşmanın son bilinen konumunu sakla
+        this.targetX = target ? target.x : x;
+        this.targetY = target ? target.y : y;
     }
 
     update() {
-        // Ok hedefine doğru hareket eder
-        const dx = this.target.x - this.x;
-        const dy = this.target.y - this.y;
+        if (!this.isActive) return;
+
+        // Eğer hedef hala yaşıyorsa hedefin pozisyonunu güncelle
+        if (this.target) {
+            this.targetX = this.target.x;
+            this.targetY = this.target.y;
+        }
+
+        const dx = this.targetX - this.x;
+        const dy = this.targetY - this.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        
+
         if (distance > 0) {
             this.x += (dx / distance) * this.speed;
             this.y += (dy / distance) * this.speed;
+
+            // Ok hedefin konumuna ulaştığında kaybolsun
+            if (distance < this.speed) {
+                this.isActive = false;
+            }
         }
     }
 
     draw(ctx) {
-        ctx.save();
-        
-        // Okun yönünü hesapla
-        const angle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
-        
-        // Oku döndür
-        ctx.translate(this.x, this.y);
-        ctx.rotate(angle);
-        
-        // Oku çiz
-        ctx.fillStyle = this.critical ? '#FFD700' : '#FFFFFF';
-        ctx.fillRect(0, -this.height / 2, this.width, this.height);
-        
-        ctx.restore();
+        if (!this.isActive) return;
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(this.x, this.y - this.height / 2, this.width, this.height);
     }
-} 
+}
