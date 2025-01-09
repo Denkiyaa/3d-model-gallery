@@ -47,6 +47,17 @@ mongoose.connect(MONGODB_URI, {
 }).then(() => {
     isConnected = true;
     console.log('MongoDB bağlantısı başarılı');
+    
+    // Test verisi ekle
+    const testScore = new Score({
+        nickname: 'test_connection',
+        highScore: 100,
+        lastPlayed: new Date()
+    });
+    
+    return testScore.save();
+}).then((savedScore) => {
+    console.log('Test verisi başarıyla kaydedildi:', savedScore);
 }).catch((err) => {
     isConnected = false;
     console.error('MongoDB bağlantı hatası:', err);

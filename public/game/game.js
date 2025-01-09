@@ -522,7 +522,7 @@ export class Game {
         
         this.isGameOver = true;
         
-        // Skoru MongoDB'ye kaydet
+        // Skoru MongoDB'ye kaydet - relative path kullan
         fetch('/api/score', {
             method: 'POST',
             headers: {
@@ -543,9 +543,13 @@ export class Game {
         })
         .then(data => {
             console.log('Skor başarıyla kaydedildi:', data);
+            // Başarılı kayıt sonrası kullanıcıya bilgi ver
+            alert(`Skor başarıyla kaydedildi! Puan: ${this.score}`);
         })
         .catch(error => {
             console.error('Skor kaydetme hatası:', error);
+            // Hata durumunda kullanıcıya bilgi ver
+            alert('Skor kaydedilemedi: ' + error.message);
         });
         
         // Oyunu durdur
