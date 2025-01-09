@@ -21,19 +21,32 @@ const ScoreSchema = new mongoose.Schema({
     nickname: { type: String, required: true },
     score: { type: Number, required: true },
     date: { type: Date, default: Date.now }
-}, { collection: 'scores' });
+}, { 
+    collection: 'scores',
+    writeConcern: {
+        w: 'majority',
+        j: true,
+        wtimeout: 1000
+    }
+});
 
 const Score = mongoose.model('Score', ScoreSchema);
 
 // MongoDB bağlantısı
-const MONGODB_URI = 'mongodb://denkiya:1327@vmi2186126.contaboserver.net:27017/gamedb?authSource=admin';
+const MONGODB_URI = 'mongodb://admin:1327@vmi2186126.contaboserver.net:27017/gamedb?authSource=admin';
 
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000
 })
 .then(() => {
     console.log('MongoDB bağlantısı başarılı');
+    // Test bağlantısı
+    return Score.findOne();
+})
+.then(result => {
+    console.log('Test sorgusu sonucu:', result);
 })
 .catch((err) => {
     console.error('MongoDB hatası:', err);
@@ -85,6 +98,10 @@ app.post('/api/score', async (req, res) => {
         console.log('Gelen skor verisi:', req.body);
         const { nickname, score } = req.body;
         
+        if (!nickname || !score) {
+            throw new Error('Nickname ve score zorunludur');
+        }
+
         // Yeni skor dokümanı oluştur
         const newScore = new Score({
             nickname: nickname,
@@ -93,7 +110,7 @@ app.post('/api/score', async (req, res) => {
         });
 
         // Kaydet
-        const savedScore = await newScore.save();
+        const savedScore = await newScore.save({ w: 1 });
         console.log('Kaydedilen skor:', savedScore);
 
         res.json({ 
@@ -104,7 +121,8 @@ app.post('/api/score', async (req, res) => {
         console.error('Skor kaydetme hatası:', error);
         res.status(500).json({ 
             error: 'Skor kaydedilemedi', 
-            details: error.message 
+            details: error.message,
+            stack: error.stack 
         });
     }
 });
