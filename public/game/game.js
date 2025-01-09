@@ -535,7 +535,9 @@ export class Game {
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json().then(err => {
+                    throw new Error(`Skor kaydetme hatası: ${err.details || err.error}`);
+                });
             }
             return response.json();
         })
@@ -561,7 +563,7 @@ export class Game {
         })
         .catch(error => {
             console.error('Skor işleme hatası:', error);
-            alert('Skor kaydedilirken bir hata oluştu!');
+            alert('Skor kaydedilirken bir hata oluştu: ' + error.message);
         });
         
         // Oyunu durdur

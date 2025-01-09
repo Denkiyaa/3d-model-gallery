@@ -103,12 +103,22 @@ app.post('/api/login', async (req, res) => {
 
 app.post('/api/score', async (req, res) => {
     try {
-        console.log('Gelen skor verisi:', req.body);
+        // Bağlantı durumu kontrolü
+        if (mongoose.connection.readyState !== 1) {
+            console.error('Veritabanı bağlantı durumu:', mongoose.connection.readyState);
+            throw new Error('Veritabanı bağlantısı aktif değil');
+        }
+
+        console.log('Skor kaydetme isteği alındı:', req.body);
         const { nickname, score } = req.body;
         
         if (!nickname || !score) {
-            throw new Error('Nickname ve score zorunludur');
+            throw new Error(`Eksik veri: nickname=${nickname}, score=${score}`);
         }
+
+        // Koleksiyon kontrolü
+        const collections = await mongoose.connection.db.listCollections().toArray();
+        console.log('Mevcut koleksiyonlar:', collections.map(c => c.name));
 
         // Yeni skor dokümanı oluştur
         const newScore = new Score({
@@ -117,20 +127,33 @@ app.post('/api/score', async (req, res) => {
             date: new Date()
         });
 
-        // Kaydet
-        const savedScore = await newScore.save({ w: 1 });
-        console.log('Kaydedilen skor:', savedScore);
+        console.log('Kaydedilecek skor:', newScore);
+
+        // Kaydet ve sonucu bekle
+        const savedScore = await newScore.save();
+        console.log('Skor başarıyla kaydedildi:', savedScore);
+
+        // Doğrulama için tekrar oku
+        const verifyScore = await Score.findById(savedScore._id);
+        console.log('Kaydedilen skor doğrulandı:', verifyScore);
 
         res.json({ 
             success: true, 
-            score: savedScore 
+            score: savedScore,
+            message: 'Skor başarıyla kaydedildi'
         });
     } catch (error) {
-        console.error('Skor kaydetme hatası:', error);
+        console.error('Skor kaydetme hatası:', {
+            error: error.message,
+            stack: error.stack,
+            mongoState: mongoose.connection.readyState,
+            body: req.body
+        });
+
         res.status(500).json({ 
             error: 'Skor kaydedilemedi', 
             details: error.message,
-            stack: error.stack 
+            mongoState: mongoose.connection.readyState
         });
     }
 });
