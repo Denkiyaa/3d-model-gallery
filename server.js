@@ -42,7 +42,10 @@ ScoreSchema.index({ score: -1 });
 const Score = mongoose.model('Score', ScoreSchema);
 
 // MongoDB bağlantısı
-const MONGODB_URI = 'mongodb://admin:1327@vmi2186126.contaboserver.net:27017/gamedb?authSource=admin';
+const MONGODB_URI = 'mongodb://admin:1327@vmi2186126.contaboserver.net:27017/admin';
+
+// Bağlantı durumunu global olarak takip et
+let isConnected = false;
 
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
@@ -52,27 +55,24 @@ mongoose.connect(MONGODB_URI, {
     socketTimeoutMS: 45000,
 })
 .then(async () => {
+    isConnected = true;
     console.log('MongoDB bağlantısı başarılı');
+    
+    // Admin veritabanından gamedb'ye geç
+    await mongoose.connection.db.admin().command({ ping: 1 });
+    await mongoose.connection.useDb('gamedb');
     
     // Koleksiyon kontrolü
     const collections = await mongoose.connection.db.listCollections().toArray();
+    console.log('Mevcut koleksiyonlar:', collections.map(c => c.name));
+    
     if (!collections.some(col => col.name === 'scores')) {
         await mongoose.connection.db.createCollection('scores');
         console.log('scores koleksiyonu oluşturuldu');
     }
-    
-    // Test verisi ekle
-    const testCount = await Score.countDocuments();
-    if (testCount === 0) {
-        await Score.create({
-            nickname: 'TestPlayer',
-            score: 100,
-            date: new Date()
-        });
-        console.log('Test verisi eklendi');
-    }
 })
 .catch((err) => {
+    isConnected = false;
     console.error('MongoDB bağlantı hatası:', {
         message: err.message,
         stack: err.stack,
@@ -159,54 +159,40 @@ app.post('/api/score', async (req, res) => {
 app.get('/api/leaderboard', async (req, res) => {
     try {
         // Bağlantı kontrolü
-        if (mongoose.connection.readyState !== 1) {
+        if (!isConnected || mongoose.connection.readyState !== 1) {
+            console.error('Veritabanı bağlantı durumu:', {
+                isConnected,
+                readyState: mongoose.connection.readyState,
+                db: mongoose.connection.db?.databaseName
+            });
             throw new Error('Veritabanı bağlantısı aktif değil');
         }
 
-        console.log('Leaderboard isteği alındı');
-
         // Koleksiyon kontrolü
         const collections = await mongoose.connection.db.listCollections().toArray();
-        const hasScoresCollection = collections.some(col => col.name === 'scores');
-        
-        if (!hasScoresCollection) {
-            console.log('scores koleksiyonu bulunamadı, oluşturuluyor...');
-            await mongoose.connection.db.createCollection('scores');
-        }
-
-        // Tüm skorları getir
-        const allScores = await Score.find().exec();
-        console.log('Bulunan toplam skor sayısı:', allScores.length);
-
-        // Hiç skor yoksa boş array dön
-        if (!allScores || allScores.length === 0) {
-            console.log('Hiç skor bulunamadı, boş array dönülüyor');
-            return res.json([]);
-        }
+        console.log('Mevcut koleksiyonlar:', collections.map(c => c.name));
 
         // En yüksek 10 skoru getir
         const scores = await Score.find()
             .sort({ score: -1 })
             .limit(10)
-            .select('nickname score date')
             .lean()
             .exec();
 
-        console.log('En yüksek 10 skor:', JSON.stringify(scores, null, 2));
-
-        res.json(scores);
+        console.log('Bulunan skorlar:', scores);
+        res.json(scores || []);
     } catch (error) {
-        console.error('Leaderboard hatası detayları:', {
+        console.error('Leaderboard hatası:', {
             message: error.message,
             stack: error.stack,
             mongoState: mongoose.connection.readyState,
-            mongoError: mongoose.connection.error
+            mongoError: mongoose.connection.error,
+            collections: await mongoose.connection.db?.listCollections().toArray()
         });
 
         res.status(500).json({ 
             error: 'Leaderboard alınamadı',
-            message: error.message,
-            mongoState: mongoose.connection.readyState
+            details: error.message
         });
     }
 });
