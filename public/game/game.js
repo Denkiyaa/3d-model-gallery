@@ -556,19 +556,17 @@ export class Game {
         const waveStatus = document.getElementById('waveStatus');
         if (waveStatus) waveStatus.style.display = 'none';
 
-        // Game Over ekranı - resimde gördüğümüz gibi basit ve net
+        // Game Over ekranı
         const gameOverScreen = document.createElement('div');
         gameOverScreen.className = 'game-over-screen';
         gameOverScreen.innerHTML = `
             <div class="game-over-content">
-                <h1 style="color: red;">Game Over!</h1>
+                <h1>Game Over!</h1>
                 <p>Player: ${this.nickname}</p>
                 <p>Wave: ${this.waveManager.currentWave}</p>
                 <p>Final Score: ${this.score}</p>
-                <div class="button-group">
-                    <button id="playAgain" class="medieval-button">Play Again</button>
-                    <button id="saveScore" class="medieval-button">Save Score</button>
-                </div>
+                <button id="playAgain" class="restart-button">Play Again</button>
+                <button id="saveScore" class="restart-button">Save Score</button>
             </div>
         `;
         document.body.appendChild(gameOverScreen);
