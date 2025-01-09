@@ -556,7 +556,7 @@ export class Game {
         const waveStatus = document.getElementById('waveStatus');
         if (waveStatus) waveStatus.style.display = 'none';
 
-        // Game Over ekranı
+        // Game Over ekranı - sadece ekranı göster
         const gameOverScreen = document.createElement('div');
         gameOverScreen.className = 'game-over-screen';
         gameOverScreen.innerHTML = `
@@ -568,7 +568,7 @@ export class Game {
                 <button id="saveScore" class="medieval-button">Save Score</button>
                 <p id="saveStatus"></p>
                 <div id="leaderboard"></div>
-                <button id="playAgain" class="medieval-button" style="display: none">Play Again</button>
+                <button id="playAgain" class="medieval-button">Play Again</button>
             </div>
         `;
         document.body.appendChild(gameOverScreen);
@@ -576,8 +576,9 @@ export class Game {
         // Save Score butonuna tıklama olayı
         document.getElementById('saveScore').addEventListener('click', () => {
             const saveButton = document.getElementById('saveScore');
-            const saveStatus = document.getElementById('saveStatus');
             saveButton.disabled = true;
+            
+            const saveStatus = document.getElementById('saveStatus');
             saveStatus.textContent = 'Skor kaydediliyor...';
             
             fetch('/api/score', {
@@ -594,7 +595,7 @@ export class Game {
                 saveStatus.textContent = 'Skor kaydedildi!';
                 saveButton.style.display = 'none';
                 
-                // Skor kaydedildikten sonra leaderboard'u göster
+                // Leaderboard'u göster
                 fetch('/api/leaderboard')
                     .then(response => response.json())
                     .then(scores => {
@@ -609,8 +610,6 @@ export class Game {
                                 `).join('')}
                             </ul>
                         `;
-                        // Leaderboard gösterildikten sonra Play Again butonunu göster
-                        document.getElementById('playAgain').style.display = 'block';
                     });
             })
             .catch(error => {
