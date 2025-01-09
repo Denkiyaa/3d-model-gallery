@@ -522,7 +522,9 @@ export class Game {
         
         this.isGameOver = true;
         
-        // Skoru MongoDB'ye kaydet - relative path kullan
+        console.log('Game Over başladı - Skor:', this.score); // Debug log
+        
+        // Skoru MongoDB'ye kaydet
         fetch('/api/score', {
             method: 'POST',
             headers: {
@@ -534,8 +536,10 @@ export class Game {
             })
         })
         .then(response => {
+            console.log('Skor kaydetme yanıtı:', response.status); // Debug log
             if (!response.ok) {
                 return response.json().then(err => {
+                    console.error('Sunucu hatası:', err); // Debug log
                     throw new Error(`Skor kaydetme hatası: ${err.details || err.error}`);
                 });
             }
@@ -543,23 +547,10 @@ export class Game {
         })
         .then(data => {
             console.log('Skor başarıyla kaydedildi:', data);
-            // Başarılı kayıt sonrası kullanıcıya bilgi ver
-            alert(`Skor başarıyla kaydedildi! Puan: ${this.score}`);
         })
         .catch(error => {
             console.error('Skor kaydetme hatası:', error);
-            // Hata durumunda kullanıcıya bilgi ver
-            alert('Skor kaydedilemedi: ' + error.message);
         });
-        
-        // Oyunu durdur
-        this.enemies = [];
-        this.arrows = [];
-        
-        // Canvas'ı temizle
-        if (this.ctx && this.canvas) {
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        }
         
         try {
             // UI elementlerini temizle
@@ -583,22 +574,27 @@ export class Game {
                     <p>Wave: ${this.waveManager.currentWave}</p>
                     <p>Final Score: ${this.score}</p>
                     <button class="restart-button">Play Again</button>
+                    <p class="save-status">Skor kaydediliyor...</p>
                 </div>
             `;
             
             document.body.appendChild(gameOverScreen);
 
-            // Restart butonu
+            // Restart butonu - otomatik yenileme yerine manuel yenileme
             const restartButton = gameOverScreen.querySelector('.restart-button');
             if (restartButton) {
                 restartButton.addEventListener('click', () => {
-                    window.location.reload();
+                    const confirmRestart = confirm('Logları kontrol ettiniz mi? Sayfa yenilenecek.');
+                    if (confirmRestart) {
+                        window.location.reload();
+                    }
                 });
             }
 
         } catch (error) {
-            console.error('Game Over error:', error);
-            window.location.reload();
+            console.error('Game Over UI hatası:', error);
+            // Otomatik yenilemeyi kaldırdık
+            alert('Game Over UI hatası: ' + error.message);
         }
     }
 }
