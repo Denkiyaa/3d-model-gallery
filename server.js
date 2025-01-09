@@ -7,8 +7,8 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(path.join(__dirname, 'public/game')));
+app.use('/static', express.static(path.join(__dirname, 'public')));
+app.use('/', express.static(path.join(__dirname, 'public/game')));
 
 const SCORES_FILE = path.join(__dirname, 'data', 'scores.json');
 
@@ -29,10 +29,12 @@ function writeScores(scores) {
 
 // Önce spesifik route'ları tanımlayalım
 app.get('/favicon.ico', (req, res) => {
+    res.setHeader('Content-Type', 'image/x-icon');
     res.sendFile(path.join(__dirname, 'public/favicon.ico'));
 });
 
 app.get('/manifest.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
     res.sendFile(path.join(__dirname, 'public/manifest.json'));
 });
 
