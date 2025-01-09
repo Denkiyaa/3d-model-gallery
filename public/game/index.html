@@ -5,6 +5,56 @@
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/x-icon" href="http://craftedfromfilament.com/favicon.ico">
     <link rel="manifest" href="http://craftedfromfilament.com/manifest.json">
+    <style>
+        /* Mevcut stiller... */
+        
+        .leaderboard-container {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 30px;
+            border-radius: 20px;
+            border: 2px solid #FFD700;
+            color: white;
+            z-index: 2000;
+        }
+
+        .leaderboard-container h2 {
+            color: #FFD700;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .leaderboard-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .leaderboard-button {
+            background: #FFD700;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+
+        .leaderboard-button:hover {
+            background: #FFC000;
+        }
+    </style>
 </head>
 <body>
     <div id="loginScreen" class="login-screen">
@@ -12,12 +62,16 @@
             <h2>Castle Defense</h2>
             <input type="text" id="nicknameInput" placeholder="Enter your nickname" maxlength="15">
             <button id="startButton">Start Game</button>
-            <div id="leaderboard" class="leaderboard">
-                <h3>Top Players</h3>
-                <ul id="leaderboardList"></ul>
-            </div>
+            <button id="showLeaderboard" class="leaderboard-button">Leaderboard</button>
         </div>
     </div>
+
+    <div id="leaderboardContainer" class="leaderboard-container">
+        <button class="leaderboard-close">&times;</button>
+        <h2>Top Players</h2>
+        <ul id="leaderboardList"></ul>
+    </div>
+
     <div id="waveStatus">Wave 1</div>
     <canvas id="gameCanvas"></canvas>
     
@@ -36,5 +90,26 @@
     </div>
 
     <script type="module" src="main.js"></script>
+    <script type="module">
+        // Mevcut script kodları...
+
+        // Leaderboard butonları için event listener'lar
+        document.getElementById('showLeaderboard').addEventListener('click', () => {
+            const leaderboardContainer = document.getElementById('leaderboardContainer');
+            leaderboardContainer.style.display = 'block';
+            
+            // Leaderboard'u güncelle
+            const highScores = JSON.parse(localStorage.getItem('highScores') || '[]');
+            const leaderboardList = document.getElementById('leaderboardList');
+            leaderboardList.innerHTML = highScores
+                .map((score, index) => `
+                    <li>${index + 1}. ${score.nickname} - ${score.score}</li>
+                `).join('');
+        });
+
+        document.querySelector('.leaderboard-close').addEventListener('click', () => {
+            document.getElementById('leaderboardContainer').style.display = 'none';
+        });
+    </script>
 </body>
 </html>
