@@ -34,7 +34,8 @@ mongoose.connect(MONGODB_URI, {
     authSource: 'gamedb',
     user: 'denkiya',
     pass: '1327',
-    dbName: 'gamedb'
+    dbName: 'gamedb',
+    w: 1 // Write concern ayarı
 })
 .then(async () => {
     console.log('MongoDB bağlantısı başarılı');
