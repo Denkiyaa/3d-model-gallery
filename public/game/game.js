@@ -2,7 +2,6 @@ import { GAME_CONFIG } from './config.js';
 import { Player } from './Player.js';
 import { WaveManager } from './WaveManager.js';
 import { CardSystem } from './CardSystem.js';
-import { saveHighScore, updateLeaderboard } from './main.js';
 
 export class Game {
     constructor(nickname) {
@@ -45,6 +44,8 @@ export class Game {
     }
 
     update() {
+        if (this.isGameOver) return; // Oyun bittiyse güncelleme yapma
+        
         if (this.cardSystem.isChoosingCard) return;
         
         // Update player
@@ -514,26 +515,16 @@ export class Game {
     }
 
     gameOver() {
+        if (this.isGameOver) return; // Eğer zaten game over olduysa tekrar çalıştırma
+        
         this.isGameOver = true;
         
-        // Önce mevcut oyun elementlerini temizle
+        // Mevcut oyun elementlerini temizle
         const healthContainer = document.querySelector('.health-container');
         if (healthContainer) {
             healthContainer.remove();
         }
-
-        // Skoru kaydet ve leaderboard'u güncelle
-        fetch('/api/score', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                nickname: this.nickname,
-                score: this.score
-            })
-        });
-
+        
         // Game Over ekranını göster
         const gameOverScreen = document.createElement('div');
         gameOverScreen.className = 'game-over-screen';
@@ -542,7 +533,7 @@ export class Game {
                 <h1>Game Over!</h1>
                 <p>Player: ${this.nickname}</p>
                 <p>Wave: ${this.waveManager.currentWave}</p>
-                <p>Final Score: ${this.score}</p>
+                <p>Score: ${this.score}</p>
                 <button class="restart-button">Play Again</button>
             </div>
         `;
@@ -553,11 +544,8 @@ export class Game {
         restartButton.addEventListener('click', () => {
             // Oyun ekranını temizle
             gameOverScreen.remove();
-            // Login ekranını göster
-            const loginScreen = document.getElementById('loginScreen');
-            loginScreen.style.display = 'flex';
-            // Leaderboard'u güncelle
-            updateLeaderboard();
+            // Sayfayı yeniden yükle
+            location.reload();
         });
     }
 }
