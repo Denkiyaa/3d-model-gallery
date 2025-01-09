@@ -35,19 +35,22 @@ mongoose.connect(MONGODB_URI, {
     user: 'denkiya',
     pass: '1327',
     dbName: 'gamedb',
-    w: 1 // Write concern ayarı
-})
-.then(async () => {
+    w: 1
+}).then(async () => {
     console.log('MongoDB bağlantısı başarılı');
-    
-    // Koleksiyon kontrolü
-    const collections = await mongoose.connection.db.listCollections().toArray();
-    if (!collections.some(c => c.name === 'scores')) {
-        await mongoose.connection.db.createCollection('scores');
-        console.log('scores koleksiyonu oluşturuldu');
+    try {
+        // Koleksiyon kontrolü
+        const collections = await mongoose.connection.db.listCollections().toArray();
+        console.log('Mevcut koleksiyonlar:', collections);
+        
+        if (!collections.some(c => c.name === 'scores')) {
+            await mongoose.connection.db.createCollection('scores');
+            console.log('scores koleksiyonu oluşturuldu');
+        }
+    } catch (error) {
+        console.error('Koleksiyon kontrolü hatası:', error);
     }
-})
-.catch((err) => {
+}).catch((err) => {
     console.error('MongoDB bağlantı hatası:', err);
 });
 
