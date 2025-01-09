@@ -26,43 +26,34 @@ const ScoreSchema = new mongoose.Schema({
 const Score = mongoose.model('Score', ScoreSchema);
 
 // MongoDB bağlantısı
-const MONGODB_URI = 'mongodb://denkiya:1327@vmi2186126.contaboserver.net:27017/gamedb?authSource=gamedb';
+const MONGODB_URI = 'mongodb://denkiya:1327@localhost:27017/gamedb?authSource=gamedb';
+
+// Bağlantı durumunu global olarak takip et
+let isConnected = false;
 
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    authSource: 'gamedb',
-    user: 'denkiya',
-    pass: '1327',
-    dbName: 'gamedb',
-    w: 1,
-    connectTimeoutMS: 10000, // Bağlantı zaman aşımı
-    socketTimeoutMS: 45000,  // Soket zaman aşımı
-    family: 4               // IPv4 kullan
-}).then(async () => {
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 10000,
+    socketTimeoutMS: 45000,
+    family: 4
+}).then(() => {
+    isConnected = true;
     console.log('MongoDB bağlantısı başarılı');
-    try {
-        // Koleksiyon kontrolü
-        const collections = await mongoose.connection.db.listCollections().toArray();
-        console.log('Mevcut koleksiyonlar:', collections);
-        
-        if (!collections.some(c => c.name === 'scores')) {
-            await mongoose.connection.db.createCollection('scores');
-            console.log('scores koleksiyonu oluşturuldu');
-        }
-    } catch (error) {
-        console.error('Koleksiyon kontrolü hatası:', error);
-    }
 }).catch((err) => {
+    isConnected = false;
     console.error('MongoDB bağlantı hatası:', err);
 });
 
 // Bağlantı durumunu izle
 mongoose.connection.on('error', (err) => {
+    isConnected = false;
     console.error('MongoDB bağlantı hatası:', err);
 });
 
 mongoose.connection.on('disconnected', () => {
+    isConnected = false;
     console.error('MongoDB bağlantısı kesildi');
 });
 
@@ -135,19 +126,43 @@ app.post('/api/score', async (req, res) => {
 
 app.get('/api/leaderboard', async (req, res) => {
     try {
-        const scores = await Score.find()
-            .sort({ highScore: -1 })
-            .limit(10)
-            .select('nickname highScore lastPlayed -_id')
-            .exec();
-        
+        // Bağlantı kontrolü
+        if (!isConnected) {
+            throw new Error('Veritabanı bağlantısı aktif değil');
+        }
+
+        // Veritabanı sorgusunu try-catch içine al
+        let scores;
+        try {
+            scores = await Score.find()
+                .sort({ highScore: -1 })
+                .limit(10)
+                .select('nickname highScore lastPlayed -_id')
+                .lean()
+                .exec();
+        } catch (dbError) {
+            console.error('Veritabanı sorgu hatası:', dbError);
+            throw new Error('Veritabanı sorgusu başarısız');
+        }
+
+        // Sonuçları kontrol et
+        if (!scores) {
+            return res.json([]);
+        }
+
         console.log('Bulunan skorlar:', scores);
         res.json(scores);
     } catch (error) {
-        console.error('Leaderboard hatası:', error);
+        console.error('Leaderboard hatası:', {
+            message: error.message,
+            stack: error.stack,
+            mongoState: mongoose.connection.readyState
+        });
+        
         res.status(500).json({ 
             error: 'Leaderboard alınamadı',
-            details: error.message
+            details: error.message,
+            connected: isConnected
         });
     }
 });
