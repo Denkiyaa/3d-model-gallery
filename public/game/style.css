@@ -253,7 +253,6 @@ span {
     text-align: center;
     color: white;
     border: 2px solid #FF0000;
-    z-index: 1001;
 }
 
 .game-over-content h1 {
@@ -262,7 +261,7 @@ span {
     margin-bottom: 20px;
 }
 
-.medieval-button {
+.restart-button {
     background: #FF0000;
     color: white;
     border: none;
@@ -270,11 +269,11 @@ span {
     font-size: 20px;
     border-radius: 10px;
     cursor: pointer;
-    margin: 10px;
-    z-index: 1002;
+    margin-top: 20px;
+    transition: background 0.3s;
 }
 
-.medieval-button:hover {
+.restart-button:hover {
     background: #CC0000;
 }
 
@@ -467,15 +466,4 @@ span {
     color: #ff4444;
     text-align: center;
     padding: 20px;
-}
-
-.button-container {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-top: 20px;
-}
-
-.button-container button {
-    min-width: 120px;
 }

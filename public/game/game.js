@@ -546,33 +546,41 @@ export class Game {
     }
 
     gameOver() {
-        console.log('1. Game Over başladı');
         if (this.isGameOver) return;
         this.isGameOver = true;
+        
+        // UI elementlerini temizle
+        const healthContainer = document.querySelector('.health-container');
+        if (healthContainer) healthContainer.remove();
 
-        // Tüm mevcut Game Over ekranlarını temizle
-        const existingGameOver = document.querySelector('.game-over-screen');
-        if (existingGameOver) {
-            console.log('Mevcut Game Over ekranı kaldırılıyor');
-            existingGameOver.remove();
-        }
+        const waveStatus = document.getElementById('waveStatus');
+        if (waveStatus) waveStatus.style.display = 'none';
 
-        // Yeni ve basit Game Over ekranı
+        // Game Over ekranı - resimde gördüğümüz gibi basit ve net
         const gameOverScreen = document.createElement('div');
         gameOverScreen.className = 'game-over-screen';
         gameOverScreen.innerHTML = `
             <div class="game-over-content">
-                <h1>Game Over!</h1>
-                <p>Score: ${this.score}</p>
-                <button id="saveScore" class="medieval-button">Save Score</button>
+                <h1 style="color: red;">Game Over!</h1>
+                <p>Player: ${this.nickname}</p>
+                <p>Wave: ${this.waveManager.currentWave}</p>
+                <p>Final Score: ${this.score}</p>
+                <div class="button-group">
+                    <button id="playAgain" class="medieval-button">Play Again</button>
+                    <button id="saveScore" class="medieval-button">Save Score</button>
+                </div>
             </div>
         `;
-
         document.body.appendChild(gameOverScreen);
-        console.log('2. Game Over ekranı eklendi');
 
-        const saveButton = document.getElementById('saveScore');
-        console.log('3. Save butonu:', saveButton);
+        // Butonlara tıklama olayları
+        document.getElementById('saveScore').addEventListener('click', () => {
+            // ... skor kaydetme kodu ...
+        });
+
+        document.getElementById('playAgain').addEventListener('click', () => {
+            window.location.reload();
+        });
     }
 }
 
