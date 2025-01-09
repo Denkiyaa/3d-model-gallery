@@ -522,20 +522,7 @@ export class Game {
         
         this.isGameOver = true;
         
-        // Skoru hem local storage'a hem de MongoDB'ye kaydet
-        const data = {
-            nickname: this.nickname,
-            score: this.score
-        };
-        
-        // Local storage için kaydet
-        let highScores = JSON.parse(localStorage.getItem('highScores') || '[]');
-        highScores.push(data);
-        highScores.sort((a, b) => b.score - a.score);
-        highScores = highScores.slice(0, 10);
-        localStorage.setItem('highScores', JSON.stringify(highScores));
-        
-        // MongoDB'ye kaydet
+        // Skoru MongoDB'ye kaydet
         fetch('/api/score', {
             method: 'POST',
             headers: {
@@ -547,22 +534,23 @@ export class Game {
             })
         })
         .then(response => response.json())
-        .then(data => console.log('Skor kaydedildi:', data))
-        .catch(error => console.error('Skor kaydetme hatası:', error));
-
-        // Leaderboard'u güncelle
-        fetch('/api/leaderboard')
-            .then(response => response.json())
-            .then(scores => {
-                const leaderboardList = document.getElementById('leaderboardList');
-                if (leaderboardList) {
-                    leaderboardList.innerHTML = scores
-                        .map((score, index) => `
-                            <li>${index + 1}. ${score.nickname} - ${score.score}</li>
-                        `).join('');
-                }
-            })
-            .catch(error => console.error('Leaderboard güncelleme hatası:', error));
+        .then(data => {
+            console.log('Skor kaydedildi:', data);
+            // Leaderboard'u güncelle
+            return fetch('/api/leaderboard');
+        })
+        .then(response => response.json())
+        .then(scores => {
+            const leaderboardList = document.getElementById('leaderboardList');
+            if (leaderboardList) {
+                leaderboardList.innerHTML = scores
+                    .map((score, index) => `
+                        <li>${index + 1}. ${score.nickname} - ${score.score} 
+                            (${new Date(score.date).toLocaleDateString()})</li>
+                    `).join('');
+            }
+        })
+        .catch(error => console.error('Skor işleme hatası:', error));
         
         // Oyunu durdur
         this.enemies = [];
