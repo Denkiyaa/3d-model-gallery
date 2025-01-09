@@ -27,7 +27,16 @@ function writeScores(scores) {
     fs.writeFileSync(SCORES_FILE, JSON.stringify({ scores }, null, 2));
 }
 
-// Yeni oyuncu/skor kaydet
+// Önce spesifik route'ları tanımlayalım
+app.get('/favicon.ico', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/favicon.ico'));
+});
+
+app.get('/manifest.json', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/manifest.json'));
+});
+
+// API route'ları
 app.post('/api/login', (req, res) => {
     const { nickname } = req.body;
     const scores = readScores();
@@ -68,19 +77,9 @@ app.get('/api/leaderboard', (req, res) => {
     res.json(scores);
 });
 
-// Route'ları tanımla
+// En son catch-all route'u ekleyelim
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/game/index.html'));
-});
-
-// Favicon için özel route ekleyelim
-app.get('/favicon.ico', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/favicon.ico'));
-});
-
-// Manifest için özel route ekleyelim
-app.get('/manifest.json', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/manifest.json'));
 });
 
 const PORT = 4000;
