@@ -467,3 +467,14 @@ span {
     text-align: center;
     padding: 20px;
 }
+
+.button-container {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.button-container button {
+    min-width: 120px;
+}

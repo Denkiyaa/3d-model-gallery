@@ -556,7 +556,7 @@ export class Game {
         const waveStatus = document.getElementById('waveStatus');
         if (waveStatus) waveStatus.style.display = 'none';
 
-        // Game Over ekranı
+        // Game Over ekranı - resimde gördüğümüz gibi
         const gameOverScreen = document.createElement('div');
         gameOverScreen.className = 'game-over-screen';
         gameOverScreen.innerHTML = `
@@ -565,19 +565,43 @@ export class Game {
                 <p>Player: ${this.nickname}</p>
                 <p>Wave: ${this.waveManager.currentWave}</p>
                 <p>Final Score: ${this.score}</p>
-                <button id="playAgain" class="restart-button">Play Again</button>
-                <button id="saveScore" class="restart-button">Save Score</button>
+                <div class="button-container">
+                    <button id="playAgain" class="restart-button">Play Again</button>
+                    <button id="saveScore" class="restart-button">Save Score</button>
+                </div>
             </div>
         `;
         document.body.appendChild(gameOverScreen);
 
-        // Butonlara tıklama olayları
-        document.getElementById('saveScore').addEventListener('click', () => {
-            // ... skor kaydetme kodu ...
-        });
-
+        // Play Again butonu
         document.getElementById('playAgain').addEventListener('click', () => {
             window.location.reload();
+        });
+
+        // Save Score butonu
+        document.getElementById('saveScore').addEventListener('click', () => {
+            const saveButton = document.getElementById('saveScore');
+            saveButton.disabled = true;
+            saveButton.textContent = 'Saving...';
+            
+            fetch('/api/score', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nickname: this.nickname,
+                    score: this.score
+                })
+            })
+            .then(response => response.json())
+            .then(() => {
+                saveButton.textContent = 'Saved!';
+                saveButton.style.background = '#4CAF50';
+            })
+            .catch(() => {
+                saveButton.textContent = 'Error!';
+                saveButton.style.background = '#f44336';
+                saveButton.disabled = false;
+            });
         });
     }
 }
