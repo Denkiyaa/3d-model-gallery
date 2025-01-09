@@ -521,6 +521,11 @@ export class Game {
         if (this.isGameOver) return;
         this.isGameOver = true;
         
+        console.log('GameOver başladı - Skor gönderiliyor:', {
+            nickname: this.nickname,
+            score: this.score
+        });
+
         // UI elementlerini temizle
         const healthContainer = document.querySelector('.health-container');
         if (healthContainer) {
@@ -532,7 +537,7 @@ export class Game {
             waveStatus.style.display = 'none';
         }
 
-        // Game Over ekranı - ilk aşama
+        // Game Over ekranı
         const gameOverScreen = document.createElement('div');
         gameOverScreen.className = 'game-over-screen';
         gameOverScreen.innerHTML = `
@@ -564,8 +569,14 @@ export class Game {
             })
         })
         .then(response => {
+            console.log('Skor kaydetme yanıtı:', {
+                status: response.status,
+                ok: response.ok
+            });
+            
             if (!response.ok) {
                 return response.json().then(err => {
+                    console.error('Sunucu hatası detayı:', err);
                     document.getElementById('saveStatus').style.color = 'red';
                     document.getElementById('saveStatus').textContent = `Hata: ${err.details || err.error}`;
                     throw new Error(`Skor kaydetme hatası: ${err.details || err.error}`);
@@ -574,6 +585,7 @@ export class Game {
             return response.json();
         })
         .then(data => {
+            console.log('Skor kaydedildi, sunucu yanıtı:', data);
             document.getElementById('saveStatus').style.color = 'green';
             document.getElementById('saveStatus').textContent = `Skor başarıyla kaydedildi!`;
             
@@ -583,8 +595,15 @@ export class Game {
             
             return fetch('/api/leaderboard');
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Leaderboard yanıtı:', {
+                status: response.status,
+                ok: response.ok
+            });
+            return response.json();
+        })
         .then(scores => {
+            console.log('Leaderboard verileri:', scores);
             const leaderboardList = document.getElementById('gameOverScoresList');
             leaderboardList.innerHTML = scores
                 .map((score, index) => `
@@ -595,11 +614,12 @@ export class Game {
                         </span>
                     </li>
                 `).join('');
-            
-            console.log('Leaderboard güncellendi:', scores);
         })
         .catch(error => {
-            console.error('Skor işleme hatası:', error);
+            console.error('Skor işleme hatası:', {
+                message: error.message,
+                stack: error.stack
+            });
             document.getElementById('saveStatus').style.color = 'red';
             document.getElementById('saveStatus').textContent = `Hata: ${error.message}`;
         });
