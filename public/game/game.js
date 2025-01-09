@@ -3,36 +3,38 @@ import { Player } from './Player.js';
 import { WaveManager } from './WaveManager.js';
 import { CardSystem } from './CardSystem.js';
 
-function saveHighScore(nickname, score) {
-    try {
-        // Skoru sunucuya kaydet
-        fetch('/api/score', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ nickname, score })
-        });
-    } catch (error) {
-        console.error('Score kaydetme hatası:', error);
-    }
+export function saveHighScore(nickname, score) {
+    const data = {
+        nickname: nickname,
+        score: score
+    };
+    
+    localStorage.setItem('lastScore', JSON.stringify(data));
+    
+    let highScores = JSON.parse(localStorage.getItem('highScores') || '[]');
+    
+    // Mevcut skoru ekle
+    highScores.push(data);
+    
+    // Skorları sırala
+    highScores.sort((a, b) => b.score - a.score);
+    
+    // Sadece en yüksek 10 skoru tut
+    highScores = highScores.slice(0, 10);
+    
+    // Local storage'a kaydet
+    localStorage.setItem('highScores', JSON.stringify(highScores));
 }
 
-function updateLeaderboard() {
-    try {
-        fetch('/api/leaderboard')
-            .then(response => response.json())
-            .then(scores => {
-                const leaderboardList = document.getElementById('leaderboardList');
-                if (leaderboardList) {
-                    leaderboardList.innerHTML = scores
-                        .map((score, index) => `
-                            <li>${index + 1}. ${score.nickname} - ${score.score}</li>
-                        `).join('');
-                }
-            });
-    } catch (error) {
-        console.error('Leaderboard güncelleme hatası:', error);
+export function updateLeaderboard() {
+    const highScores = JSON.parse(localStorage.getItem('highScores') || '[]');
+    const leaderboardList = document.getElementById('leaderboardList');
+    
+    if (leaderboardList) {
+        leaderboardList.innerHTML = highScores
+            .map((score, index) => `
+                <li>${index + 1}. ${score.nickname} - ${score.score}</li>
+            `).join('');
     }
 }
 
