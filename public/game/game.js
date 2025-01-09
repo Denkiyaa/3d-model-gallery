@@ -6,6 +6,34 @@ import { CardSystem } from './CardSystem.js';
 export class Game {
     constructor(nickname) {
         this.nickname = nickname;
+        
+        // Önce oyuncuyu kaydet
+        fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ nickname: this.nickname })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Oyuncu kaydedilemedi');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Oyuncu kaydedildi:', data);
+            // Oyun başlatma işlemlerine devam et
+            this.initializeGame();
+        })
+        .catch(error => {
+            console.error('Oyuncu kayıt hatası:', error);
+            alert('Oyuncu kaydedilirken bir hata oluştu!');
+        });
+    }
+
+    // Oyun başlatma işlemlerini ayrı bir metoda alalım
+    initializeGame() {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         
@@ -569,7 +597,7 @@ export class Game {
             })
         })
         .then(response => {
-            console.log('Skor kaydetme yanıtı:', {
+            console.log('Skor güncelleme yanıtı:', {
                 status: response.status,
                 ok: response.ok
             });
