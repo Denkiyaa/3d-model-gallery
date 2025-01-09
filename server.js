@@ -92,7 +92,7 @@ app.get('/game/*', (req, res) => {
 // React uygulaması için route'lar
 app.get('/*', (req, res) => {
     if (!req.path.startsWith('/game') && !req.path.startsWith('/api')) {
-        res.sendFile(path.join(__dirname, 'build', 'index.html'));
+        res.sendFile(path.join(__dirname, 'public/index.html'));
     }
 });
 
