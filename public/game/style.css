@@ -455,3 +455,15 @@ span {
 #adminPanel button:hover {
     background: #45a049;
 }
+
+.score-date {
+    font-size: 0.8em;
+    color: #999;
+    margin-left: 10px;
+}
+
+#leaderboardList .error {
+    color: #ff4444;
+    text-align: center;
+    padding: 20px;
+}

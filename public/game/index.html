@@ -96,16 +96,44 @@
                 leaderboardContainer.style.display = 'block';
                 
                 fetch('/api/leaderboard')
-                    .then(response => response.json())
-                    .then(scores => {
-                        const leaderboardList = document.getElementById('leaderboardList');
-                        leaderboardList.innerHTML = scores
-                            .map((score, index) => `
-                                <li>${index + 1}. ${score.nickname} - ${score.score} 
-                                    (${new Date(score.date).toLocaleDateString()})</li>
-                            `).join('');
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
                     })
-                    .catch(error => console.error('Leaderboard yükleme hatası:', error));
+                    .then(data => {
+                        console.log('Gelen leaderboard verisi:', data); // Debug için
+                        const leaderboardList = document.getElementById('leaderboardList');
+                        
+                        // Veri kontrolü
+                        if (!Array.isArray(data)) {
+                            throw new Error('Geçersiz veri formatı');
+                        }
+
+                        leaderboardList.innerHTML = data
+                            .map((score, index) => {
+                                // Tarih formatını düzelt
+                                const scoreDate = new Date(score.date).toLocaleDateString('tr-TR', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                });
+                                
+                                return `
+                                    <li>
+                                        ${index + 1}. ${score.nickname} - ${score.score} 
+                                        <span class="score-date">(${scoreDate})</span>
+                                    </li>
+                                `;
+                            })
+                            .join('');
+                    })
+                    .catch(error => {
+                        console.error('Leaderboard yükleme hatası:', error);
+                        const leaderboardList = document.getElementById('leaderboardList');
+                        leaderboardList.innerHTML = '<li class="error">Skorlar yüklenirken bir hata oluştu</li>';
+                    });
             });
 
             // Leaderboard kapatma butonu
