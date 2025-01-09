@@ -5,100 +5,42 @@
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/x-icon" href="http://craftedfromfilament.com/favicon.ico">
     <link rel="manifest" href="http://craftedfromfilament.com/manifest.json">
-    <style>
-        /* Mevcut stiller... */
-        
-        .leaderboard-container {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            padding: 30px;
-            border-radius: 20px;
-            border: 2px solid #FFD700;
-            color: white;
-            z-index: 2000;
-        }
-
-        .leaderboard-container h2 {
-            color: #FFD700;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .leaderboard-close {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-        }
-
-        .leaderboard-button {
-            background: #FFD700;
-            color: black;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: background 0.3s;
-        }
-
-        .leaderboard-button:hover {
-            background: #FFC000;
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="loginScreen" class="login-screen">
         <div class="login-container">
-            <h2>Castle Defense</h2>
-            <input type="text" id="nicknameInput" placeholder="Enter your nickname" maxlength="15">
-            <button id="startButton">Start Game</button>
-            <button id="showLeaderboard" class="leaderboard-button">Leaderboard</button>
+            <div class="game-title">
+                <h1>Castle Defense</h1>
+                <div class="title-decoration"></div>
+            </div>
+            <div class="input-group">
+                <input type="text" id="nicknameInput" placeholder="Enter your nickname" maxlength="15">
+                <div class="button-group">
+                    <button id="startButton" class="medieval-button">Start Game</button>
+                    <button id="showLeaderboard" class="medieval-button gold">Leaderboard</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <div id="leaderboardContainer" class="leaderboard-container">
         <button class="leaderboard-close">&times;</button>
-        <h2>Top Players</h2>
+        <h2>Hall of Fame</h2>
+        <div class="scroll-decoration top"></div>
         <ul id="leaderboardList"></ul>
+        <div class="scroll-decoration bottom"></div>
     </div>
 
     <div id="waveStatus">Wave 1</div>
     <canvas id="gameCanvas"></canvas>
-    
-    <!-- Admin Panel -->
-    <div id="adminPanel" class="hidden">
-        <h2>Admin Paneli</h2>
-        <label for="enemySpeed">Düşman Hızı:</label>
-        <input type="number" id="enemySpeed" value="2" step="0.1">
-        <span id="currentEnemySpeed">Mevcut: 2</span><br>
-        
-        <label for="playerDamage">Oyuncu Hasarı:</label>
-        <input type="number" id="playerDamage" value="1" step="0.1">
-        <span id="currentPlayerDamage">Mevcut: 1</span><br>
-        
-        <button id="saveConfig">Kaydet</button>
-    </div>
 
     <script type="module" src="main.js"></script>
-    <script type="module">
-        // Mevcut script kodları...
-
-        // Leaderboard butonları için event listener'lar
+    <script>
         document.getElementById('showLeaderboard').addEventListener('click', () => {
             const leaderboardContainer = document.getElementById('leaderboardContainer');
             leaderboardContainer.style.display = 'block';
             
-            // Leaderboard'u güncelle
             const highScores = JSON.parse(localStorage.getItem('highScores') || '[]');
             const leaderboardList = document.getElementById('leaderboardList');
             leaderboardList.innerHTML = highScores
