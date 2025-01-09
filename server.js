@@ -8,6 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
+app.use(express.static('public/game'));
 
 const SCORES_FILE = path.join(__dirname, 'data', 'scores.json');
 
@@ -65,6 +66,11 @@ app.get('/api/leaderboard', (req, res) => {
         .sort((a, b) => b.highScore - a.highScore)
         .slice(0, 10);
     res.json(scores);
+});
+
+// Route'ları tanımla
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/game/index.html'));
 });
 
 const PORT = 4000;
