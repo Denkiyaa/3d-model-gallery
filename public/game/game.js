@@ -549,9 +549,34 @@ export class Game {
         if (this.isGameOver) return;
         this.isGameOver = true;
         
-        console.log('GameOver başladı - Skor gönderiliyor:', {
+        console.log('Game Over - Skor gönderiliyor:', {
             nickname: this.nickname,
-            score: this.score
+            score: this.score,
+            url: '/api/score'  // URL'yi kontrol et
+        });
+
+        // Skoru MongoDB'ye kaydet
+        fetch('/api/score', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                nickname: this.nickname,
+                score: this.score
+            })
+        })
+        .then(response => {
+            console.log('Sunucu yanıtı:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Sunucu verisi:', data);
+            // ... diğer kodlar
+        })
+        .catch(error => {
+            console.error('Fetch hatası:', error);
+            // ... diğer kodlar
         });
 
         // UI elementlerini temizle
@@ -585,80 +610,11 @@ export class Game {
         
         document.body.appendChild(gameOverScreen);
 
-        // Skoru MongoDB'ye kaydet
-        fetch('/api/score', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                nickname: this.nickname,
-                score: this.score
-            })
-        })
-        .then(response => {
-            console.log('Skor güncelleme yanıtı:', {
-                status: response.status,
-                ok: response.ok
-            });
-            
-            if (!response.ok) {
-                return response.json().then(err => {
-                    console.error('Sunucu hatası detayı:', err);
-                    document.getElementById('saveStatus').style.color = 'red';
-                    document.getElementById('saveStatus').textContent = `Hata: ${err.details || err.error}`;
-                    throw new Error(`Skor kaydetme hatası: ${err.details || err.error}`);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Skor kaydedildi, sunucu yanıtı:', data);
-            document.getElementById('saveStatus').style.color = 'green';
-            document.getElementById('saveStatus').textContent = `Skor başarıyla kaydedildi!`;
-            
-            // Leaderboard'u göster ve güncelle
-            const leaderboardDiv = document.getElementById('gameOverLeaderboard');
-            leaderboardDiv.style.display = 'block';
-            
-            return fetch('/api/leaderboard');
-        })
-        .then(response => {
-            console.log('Leaderboard yanıtı:', {
-                status: response.status,
-                ok: response.ok
-            });
-            return response.json();
-        })
-        .then(scores => {
-            console.log('Leaderboard verileri:', scores);
-            const leaderboardList = document.getElementById('gameOverScoresList');
-            leaderboardList.innerHTML = scores
-                .map((score, index) => `
-                    <li class="${score.nickname === this.nickname ? 'current-player' : ''}">
-                        ${index + 1}. ${score.nickname} - ${score.highScore} 
-                        <span class="score-date">
-                            (${new Date(score.lastPlayed).toLocaleDateString()})
-                        </span>
-                    </li>
-                `).join('');
-        })
-        .catch(error => {
-            console.error('Skor işleme hatası:', {
-                message: error.message,
-                stack: error.stack
-            });
-            document.getElementById('saveStatus').style.color = 'red';
-            document.getElementById('saveStatus').textContent = `Hata: ${error.message}`;
-        });
-
-        // Restart butonu
-        const restartButton = gameOverScreen.querySelector('.restart-button');
-        if (restartButton) {
-            restartButton.addEventListener('click', () => {
-                window.location.reload();
-            });
-        }
+        // Leaderboard'u göster ve güncelle
+        const leaderboardDiv = document.getElementById('gameOverLeaderboard');
+        leaderboardDiv.style.display = 'block';
+        
+        return fetch('/api/leaderboard');
     }
 }
 

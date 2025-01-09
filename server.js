@@ -85,6 +85,16 @@ app.get('/manifest.json', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/manifest.json'));
 });
 
+// API route'u başına log ekle
+app.use((req, res, next) => {
+    console.log('Gelen istek:', {
+        method: req.method,
+        url: req.url,
+        body: req.body
+    });
+    next();
+});
+
 // API route'ları MongoDB ile güncellenmiş hali
 app.post('/api/login', async (req, res) => {
     console.log('Login isteği geldi:', req.body);
@@ -109,9 +119,15 @@ app.post('/api/login', async (req, res) => {
 });
 
 app.post('/api/score', async (req, res) => {
-    console.log('Skor güncelleme isteği:', req.body);
+    console.log('Score route çalıştı');
+    console.log('Gelen veri:', req.body);
+    
     try {
         const { nickname, score } = req.body;
+        
+        if (!nickname || score === undefined) {
+            throw new Error('Eksik veri');
+        }
 
         // Mevcut oyuncuyu bul veya yeni oluştur
         let player = await Score.findOne({ nickname });
@@ -141,11 +157,8 @@ app.post('/api/score', async (req, res) => {
             score: player 
         });
     } catch (error) {
-        console.error('Skor kaydetme hatası:', error);
-        res.status(500).json({ 
-            error: 'Skor kaydedilemedi',
-            details: error.message
-        });
+        console.error('Score route hatası:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 
