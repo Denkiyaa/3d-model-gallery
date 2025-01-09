@@ -13,6 +13,8 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/game', express.static(path.join(__dirname, 'public/game')));
+app.use('/models', express.static(path.join(__dirname, 'public/models')));
+app.use('/static', express.static(path.join(__dirname, 'build/static')));
 
 // MongoDB bağlantı URL'i
 const MONGODB_URI = 'mongodb://denkiya:1327@vmi2186126.contaboserver.net:27017/gamedb';
@@ -126,10 +128,10 @@ app.get('/game/*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/game/index.html'));
 });
 
-// React uygulaması için tüm diğer route'lar
+// React uygulaması için route'lar
 app.get('/*', (req, res) => {
-    if (!req.path.startsWith('/game')) {
-        res.sendFile(path.join(__dirname, 'public/index.html'));
+    if (!req.path.startsWith('/game') && !req.path.startsWith('/api')) {
+        res.sendFile(path.join(__dirname, 'build/index.html'));
     }
 });
 
