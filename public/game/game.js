@@ -546,7 +546,7 @@ export class Game {
     }
 
     gameOver() {
-        console.log('Game Over başladı');
+        console.log('1. Game Over fonksiyonu başladı');
         if (this.isGameOver) return;
         this.isGameOver = true;
         
@@ -557,6 +557,8 @@ export class Game {
         const waveStatus = document.getElementById('waveStatus');
         if (waveStatus) waveStatus.style.display = 'none';
 
+        console.log('2. UI elementleri temizlendi');
+
         // Game Over ekranı
         const gameOverScreen = document.createElement('div');
         gameOverScreen.className = 'game-over-screen';
@@ -566,48 +568,51 @@ export class Game {
                 <p>Player: ${this.nickname}</p>
                 <p>Wave: ${this.waveManager.currentWave}</p>
                 <p>Final Score: ${this.score}</p>
-                <button id="playAgain" class="medieval-button">Play Again</button>
                 <button id="saveScore" class="medieval-button">Save Score</button>
             </div>
         `;
+
+        console.log('3. Game Over HTML oluşturuldu');
         document.body.appendChild(gameOverScreen);
-        console.log('Game Over ekranı eklendi');
-        
-        const playAgainBtn = document.getElementById('playAgain');
-        const saveScoreBtn = document.getElementById('saveScore');
-        
-        console.log('Butonlar:', { playAgain: playAgainBtn, saveScore: saveScoreBtn });
+        console.log('4. Game Over ekranı DOM\'a eklendi');
 
-        // Play Again butonu
-        document.getElementById('playAgain').addEventListener('click', () => {
-            window.location.reload();
-        });
+        // Save Score butonu kontrolü
+        const saveButton = document.getElementById('saveScore');
+        console.log('5. Save Score butonu:', saveButton);
 
-        // Save Score butonu
-        document.getElementById('saveScore').addEventListener('click', () => {
-            const saveButton = document.getElementById('saveScore');
-            saveButton.disabled = true;
-            saveButton.textContent = 'Saving...';
-            
-            fetch('/api/score', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    nickname: this.nickname,
-                    score: this.score
+        if (saveButton) {
+            saveButton.addEventListener('click', () => {
+                console.log('6. Save Score butonuna tıklandı');
+                saveButton.disabled = true;
+                saveButton.textContent = 'Saving...';
+                
+                fetch('/api/score', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nickname: this.nickname,
+                        score: this.score
+                    })
                 })
-            })
-            .then(response => response.json())
-            .then(() => {
-                saveButton.textContent = 'Saved!';
-                saveButton.style.background = '#4CAF50';
-            })
-            .catch(() => {
-                saveButton.textContent = 'Error!';
-                saveButton.style.background = '#f44336';
-                saveButton.disabled = false;
+                .then(response => {
+                    console.log('7. API yanıtı:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('8. Skor kaydedildi:', data);
+                    saveButton.textContent = 'Saved!';
+                    saveButton.style.background = '#4CAF50';
+                })
+                .catch(error => {
+                    console.error('9. Hata:', error);
+                    saveButton.textContent = 'Error!';
+                    saveButton.style.background = '#f44336';
+                    saveButton.disabled = false;
+                });
             });
-        });
+        } else {
+            console.error('Save Score butonu bulunamadı!');
+        }
     }
 }
 
