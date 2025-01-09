@@ -549,46 +549,12 @@ export class Game {
         if (this.isGameOver) return;
         this.isGameOver = true;
         
-        console.log('Game Over - Skor gönderiliyor:', {
-            nickname: this.nickname,
-            score: this.score,
-            url: '/api/score'  // URL'yi kontrol et
-        });
-
-        // Skoru MongoDB'ye kaydet
-        fetch('/api/score', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                nickname: this.nickname,
-                score: this.score
-            })
-        })
-        .then(response => {
-            console.log('Sunucu yanıtı:', response.status);
-            return response.json();
-        })
-        .then(data => {
-            console.log('Sunucu verisi:', data);
-            // ... diğer kodlar
-        })
-        .catch(error => {
-            console.error('Fetch hatası:', error);
-            // ... diğer kodlar
-        });
-
         // UI elementlerini temizle
         const healthContainer = document.querySelector('.health-container');
-        if (healthContainer) {
-            healthContainer.remove();
-        }
+        if (healthContainer) healthContainer.remove();
 
         const waveStatus = document.getElementById('waveStatus');
-        if (waveStatus) {
-            waveStatus.style.display = 'none';
-        }
+        if (waveStatus) waveStatus.style.display = 'none';
 
         // Game Over ekranı
         const gameOverScreen = document.createElement('div');
@@ -600,21 +566,49 @@ export class Game {
                 <p>Wave: ${this.waveManager.currentWave}</p>
                 <p>Final Score: ${this.score}</p>
                 <p id="saveStatus">Skor kaydediliyor...</p>
-                <div id="gameOverLeaderboard" style="display: none">
-                    <h2>High Scores</h2>
-                    <ul id="gameOverScoresList"></ul>
-                    <button class="restart-button">Play Again</button>
-                </div>
+                <div id="leaderboard"></div>
             </div>
         `;
-        
         document.body.appendChild(gameOverScreen);
 
-        // Leaderboard'u göster ve güncelle
-        const leaderboardDiv = document.getElementById('gameOverLeaderboard');
-        leaderboardDiv.style.display = 'block';
-        
-        return fetch('/api/leaderboard');
+        // İlk iş olarak skoru kaydet
+        fetch('/api/score', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nickname: this.nickname,
+                score: this.score
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            const saveStatus = document.getElementById('saveStatus');
+            saveStatus.style.color = 'green';
+            saveStatus.textContent = 'Skor kaydedildi!';
+            
+            // Skor kaydedildikten sonra leaderboard'u göster
+            fetch('/api/leaderboard')
+                .then(response => response.json())
+                .then(scores => {
+                    const leaderboard = document.getElementById('leaderboard');
+                    leaderboard.innerHTML = `
+                        <h2>High Scores</h2>
+                        <ul>
+                            ${scores.map((score, index) => `
+                                <li class="${score.nickname === this.nickname ? 'current-player' : ''}">
+                                    ${index + 1}. ${score.nickname} - ${score.highScore}
+                                </li>
+                            `).join('')}
+                        </ul>
+                        <button onclick="window.location.reload()">Play Again</button>
+                    `;
+                });
+        })
+        .catch(error => {
+            const saveStatus = document.getElementById('saveStatus');
+            saveStatus.style.color = 'red';
+            saveStatus.textContent = 'Skor kaydedilemedi: ' + error.message;
+        });
     }
 }
 
