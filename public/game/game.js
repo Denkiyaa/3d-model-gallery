@@ -565,22 +565,11 @@ export class Game {
         .then(data => {
             notification.style.background = 'rgba(0, 255, 0, 0.8)';
             notification.textContent = `Skor başarıyla kaydedildi! (${this.score} puan)`;
-            setTimeout(() => notification.remove(), 5000); // 5 saniye sonra bildirimi kaldır
         })
         .catch(error => {
             notification.style.background = 'rgba(255, 0, 0, 0.8)';
             notification.textContent = `Hata: ${error.message}`;
-            setTimeout(() => notification.remove(), 5000);
         });
-        
-        // Oyunu durdur
-        this.enemies = [];
-        this.arrows = [];
-        
-        // Canvas'ı temizle
-        if (this.ctx && this.canvas) {
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        }
         
         try {
             // UI elementlerini temizle
@@ -609,17 +598,21 @@ export class Game {
             
             document.body.appendChild(gameOverScreen);
 
-            // Restart butonu
+            // Restart butonu - sayfa yenilemeden önce sor
             const restartButton = gameOverScreen.querySelector('.restart-button');
             if (restartButton) {
                 restartButton.addEventListener('click', () => {
-                    window.location.reload();
+                    if (confirm('Sayfadan çıkmak istediğinize emin misiniz? Skor kaydedildiyse yeşil bildirim görmelisiniz.')) {
+                        window.location.reload();
+                    }
                 });
             }
 
         } catch (error) {
             console.error('Game Over error:', error);
-            window.location.reload();
+            if (confirm('Bir hata oluştu. Sayfadan çıkmak istediğinize emin misiniz?')) {
+                window.location.reload();
+            }
         }
     }
 }
