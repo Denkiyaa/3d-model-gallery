@@ -67,7 +67,7 @@ app.get('/api/leaderboard', (req, res) => {
     res.json(scores);
 });
 
-const PORT = 3000;
-app.listen(PORT, () => {
+const PORT = 4000;
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
 });
