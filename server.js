@@ -42,55 +42,26 @@ ScoreSchema.index({ score: -1 });
 const Score = mongoose.model('Score', ScoreSchema);
 
 // MongoDB bağlantısı
-const MONGODB_URI = 'mongodb://admin:1327@vmi2186126.contaboserver.net:27017/admin';
-
-// Bağlantı durumunu global olarak takip et
-let isConnected = false;
+const MONGODB_URI = 'mongodb://admin:1327@vmi2186126.contaboserver.net:27017/gamedb';
 
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000,
-    connectTimeoutMS: 10000,
-    socketTimeoutMS: 45000,
+    useUnifiedTopology: true
 })
-.then(async () => {
-    isConnected = true;
+.then(() => {
     console.log('MongoDB bağlantısı başarılı');
-    
-    // Admin veritabanından gamedb'ye geç
-    await mongoose.connection.db.admin().command({ ping: 1 });
-    await mongoose.connection.useDb('gamedb');
-    
-    // Koleksiyon kontrolü
-    const collections = await mongoose.connection.db.listCollections().toArray();
-    console.log('Mevcut koleksiyonlar:', collections.map(c => c.name));
-    
-    if (!collections.some(col => col.name === 'scores')) {
-        await mongoose.connection.db.createCollection('scores');
-        console.log('scores koleksiyonu oluşturuldu');
-    }
 })
 .catch((err) => {
-    isConnected = false;
-    console.error('MongoDB bağlantı hatası:', {
-        message: err.message,
-        stack: err.stack,
-        code: err.code,
-        state: mongoose.connection.readyState
-    });
+    console.error('MongoDB bağlantı hatası:', err);
 });
 
-mongoose.connection.on('connected', () => {
-    console.log('Mongoose bağlantısı başarılı');
-});
-
+// Bağlantı durumunu izle
 mongoose.connection.on('error', (err) => {
-    console.error('Mongoose bağlantı hatası:', err);
+    console.error('MongoDB bağlantı hatası:', err);
 });
 
 mongoose.connection.on('disconnected', () => {
-    console.log('Mongoose bağlantısı kesildi');
+    console.error('MongoDB bağlantısı kesildi');
 });
 
 // Önce spesifik route'ları tanımlayalım
@@ -158,38 +129,19 @@ app.post('/api/score', async (req, res) => {
 
 app.get('/api/leaderboard', async (req, res) => {
     try {
-        // Bağlantı kontrolü
-        if (!isConnected || mongoose.connection.readyState !== 1) {
-            console.error('Veritabanı bağlantı durumu:', {
-                isConnected,
-                readyState: mongoose.connection.readyState,
-                db: mongoose.connection.db?.databaseName
-            });
-            throw new Error('Veritabanı bağlantısı aktif değil');
-        }
-
-        // Koleksiyon kontrolü
-        const collections = await mongoose.connection.db.listCollections().toArray();
-        console.log('Mevcut koleksiyonlar:', collections.map(c => c.name));
-
-        // En yüksek 10 skoru getir
+        // Bağlantı durumunu kontrol et
+        console.log('MongoDB bağlantı durumu:', mongoose.connection.readyState);
+        
+        // Tüm skorları getir
         const scores = await Score.find()
             .sort({ score: -1 })
             .limit(10)
-            .lean()
             .exec();
-
+        
         console.log('Bulunan skorlar:', scores);
         res.json(scores || []);
     } catch (error) {
-        console.error('Leaderboard hatası:', {
-            message: error.message,
-            stack: error.stack,
-            mongoState: mongoose.connection.readyState,
-            mongoError: mongoose.connection.error,
-            collections: await mongoose.connection.db?.listCollections().toArray()
-        });
-
+        console.error('Leaderboard hatası:', error);
         res.status(500).json({ 
             error: 'Leaderboard alınamadı',
             details: error.message
