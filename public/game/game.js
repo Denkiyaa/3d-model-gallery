@@ -532,7 +532,7 @@ export class Game {
             waveStatus.style.display = 'none';
         }
 
-        // Game Over ekranı
+        // Game Over ekranı - ilk aşama
         const gameOverScreen = document.createElement('div');
         gameOverScreen.className = 'game-over-screen';
         gameOverScreen.innerHTML = `
@@ -541,12 +541,12 @@ export class Game {
                 <p>Player: ${this.nickname}</p>
                 <p>Wave: ${this.waveManager.currentWave}</p>
                 <p>Final Score: ${this.score}</p>
-                <div id="gameOverLeaderboard">
+                <p id="saveStatus">Skor kaydediliyor...</p>
+                <div id="gameOverLeaderboard" style="display: none">
                     <h2>High Scores</h2>
                     <ul id="gameOverScoresList"></ul>
+                    <button class="restart-button">Play Again</button>
                 </div>
-                <button class="restart-button">Play Again</button>
-                <p id="saveStatus">Skor kaydediliyor...</p>
             </div>
         `;
         
@@ -577,7 +577,10 @@ export class Game {
             document.getElementById('saveStatus').style.color = 'green';
             document.getElementById('saveStatus').textContent = `Skor başarıyla kaydedildi!`;
             
-            // Leaderboard'u güncelle
+            // Leaderboard'u göster ve güncelle
+            const leaderboardDiv = document.getElementById('gameOverLeaderboard');
+            leaderboardDiv.style.display = 'block';
+            
             return fetch('/api/leaderboard');
         })
         .then(response => response.json())
@@ -592,8 +595,11 @@ export class Game {
                         </span>
                     </li>
                 `).join('');
+            
+            console.log('Leaderboard güncellendi:', scores);
         })
         .catch(error => {
+            console.error('Skor işleme hatası:', error);
             document.getElementById('saveStatus').style.color = 'red';
             document.getElementById('saveStatus').textContent = `Hata: ${error.message}`;
         });
