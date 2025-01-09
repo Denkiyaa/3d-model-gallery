@@ -129,14 +129,46 @@ app.post('/api/score', async (req, res) => {
 
 app.get('/api/leaderboard', async (req, res) => {
     try {
+        // Tüm skorları getir ve debug için logla
+        const allScores = await Score.find();
+        console.log('Tüm skorlar:', allScores);
+
+        // En yüksek 10 skoru getir
         const scores = await Score.find()
             .sort({ score: -1 })
-            .limit(10);
-        console.log('Leaderboard skorları:', scores); // Debug için
-        res.json(scores);
+            .limit(10)
+            .select('nickname score date -_id'); // Sadece gerekli alanları seç
+
+        console.log('Leaderboard için seçilen skorlar:', scores);
+
+        if (!scores || scores.length === 0) {
+            // Test verisi ekle
+            const testScore = new Score({
+                nickname: 'TestPlayer',
+                score: 100,
+                date: new Date()
+            });
+            await testScore.save();
+            console.log('Test skoru eklendi');
+            
+            // Tekrar sorgula
+            const updatedScores = await Score.find()
+                .sort({ score: -1 })
+                .limit(10)
+                .select('nickname score date -_id');
+                
+            console.log('Güncellenmiş skorlar:', updatedScores);
+            res.json(updatedScores);
+        } else {
+            res.json(scores);
+        }
     } catch (error) {
         console.error('Leaderboard hatası:', error);
-        res.status(500).json({ error: 'Leaderboard alınamadı' });
+        res.status(500).json({ 
+            error: 'Leaderboard alınamadı',
+            details: error.message,
+            stack: error.stack
+        });
     }
 });
 
