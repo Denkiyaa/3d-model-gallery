@@ -35,7 +35,10 @@ mongoose.connect(MONGODB_URI, {
     user: 'denkiya',
     pass: '1327',
     dbName: 'gamedb',
-    w: 1
+    w: 1,
+    connectTimeoutMS: 10000, // Bağlantı zaman aşımı
+    socketTimeoutMS: 45000,  // Soket zaman aşımı
+    family: 4               // IPv4 kullan
 }).then(async () => {
     console.log('MongoDB bağlantısı başarılı');
     try {
