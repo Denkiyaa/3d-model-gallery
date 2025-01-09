@@ -18,18 +18,27 @@ app.use('/models', express.static(path.join(__dirname, 'public/models')));
 
 // Skor şeması
 const ScoreSchema = new mongoose.Schema({
-    nickname: { type: String, required: true },
-    score: { type: Number, required: true },
-    date: { type: Date, default: Date.now }
+    nickname: { 
+        type: String, 
+        required: true,
+        trim: true
+    },
+    score: { 
+        type: Number, 
+        required: true,
+        min: 0
+    },
+    date: { 
+        type: Date, 
+        default: Date.now 
+    }
 }, { 
     collection: 'scores',
-    writeConcern: {
-        w: 'majority',
-        j: true,
-        wtimeout: 1000
-    }
+    timestamps: true
 });
 
+// Skor modelini oluşturmadan önce index ekle
+ScoreSchema.index({ score: -1 });
 const Score = mongoose.model('Score', ScoreSchema);
 
 // MongoDB bağlantısı
@@ -131,43 +140,37 @@ app.get('/api/leaderboard', async (req, res) => {
     try {
         // Tüm skorları getir ve debug için logla
         const allScores = await Score.find();
-        console.log('Tüm skorlar:', allScores);
+        console.log('Veritabanındaki tüm skorlar:', allScores);
+
+        if (!allScores || allScores.length === 0) {
+            // Hiç skor yoksa boş array dön
+            console.log('Hiç skor bulunamadı');
+            return res.json([]);
+        }
 
         // En yüksek 10 skoru getir
         const scores = await Score.find()
             .sort({ score: -1 })
             .limit(10)
-            .select('nickname score date -_id'); // Sadece gerekli alanları seç
+            .lean() // JSON'a çevirmek için
+            .exec();
 
         console.log('Leaderboard için seçilen skorlar:', scores);
 
-        if (!scores || scores.length === 0) {
-            // Test verisi ekle
-            const testScore = new Score({
-                nickname: 'TestPlayer',
-                score: 100,
-                date: new Date()
-            });
-            await testScore.save();
-            console.log('Test skoru eklendi');
-            
-            // Tekrar sorgula
-            const updatedScores = await Score.find()
-                .sort({ score: -1 })
-                .limit(10)
-                .select('nickname score date -_id');
-                
-            console.log('Güncellenmiş skorlar:', updatedScores);
-            res.json(updatedScores);
-        } else {
-            res.json(scores);
-        }
+        // Skorları formatlayıp gönder
+        const formattedScores = scores.map(score => ({
+            nickname: score.nickname,
+            score: score.score,
+            date: score.date
+        }));
+
+        res.json(formattedScores);
     } catch (error) {
         console.error('Leaderboard hatası:', error);
         res.status(500).json({ 
             error: 'Leaderboard alınamadı',
             details: error.message,
-            stack: error.stack
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 });
