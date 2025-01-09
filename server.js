@@ -17,7 +17,7 @@ app.use('/game', express.static(path.join(__dirname, 'public/game')));
 app.use('/models', express.static(path.join(__dirname, 'public/models')));
 
 // MongoDB bağlantısı
-const MONGODB_URI = 'mongodb://denkiya:1327@vmi2186126.contaboserver.net:27017/gamedb';
+const MONGODB_URI = 'mongodb://denkiya:1327@vmi2186126.contaboserver.net:27017/gamedb?authSource=gamedb';
 
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
@@ -25,17 +25,26 @@ mongoose.connect(MONGODB_URI, {
 })
 .then(() => {
     console.log('MongoDB bağlantısı başarılı');
+    // Test amaçlı bir skor ekleyelim
+    return Score.create({
+        nickname: 'test',
+        score: 100,
+        date: new Date()
+    });
+})
+.then(() => {
+    console.log('Test skoru başarıyla eklendi');
 })
 .catch((err) => {
-    console.error('MongoDB bağlantı hatası:', err);
+    console.error('MongoDB hatası:', err);
 });
 
 // Skor şeması
 const ScoreSchema = new mongoose.Schema({
-    nickname: String,
-    score: Number,
+    nickname: { type: String, required: true },
+    score: { type: Number, required: true },
     date: { type: Date, default: Date.now }
-});
+}, { collection: 'scores' });
 
 const Score = mongoose.model('Score', ScoreSchema);
 
@@ -70,34 +79,50 @@ app.post('/api/login', async (req, res) => {
 
 app.post('/api/score', async (req, res) => {
     try {
-        console.log('Gelen skor verisi:', req.body); // Debug için
+        console.log('Gelen skor verisi:', req.body);
 
         const { nickname, score } = req.body;
         
+        if (!nickname || !score) {
+            throw new Error('Nickname ve score zorunludur');
+        }
+
         // Mevcut en yüksek skoru kontrol et
         let existingScore = await Score.findOne({ nickname });
-        console.log('Mevcut skor:', existingScore); // Debug için
+        console.log('Mevcut skor:', existingScore);
         
+        let savedScore;
         if (!existingScore) {
             // Yeni oyuncu
-            existingScore = new Score({
+            savedScore = await Score.create({
                 nickname,
                 score,
                 date: new Date()
             });
+            console.log('Yeni skor kaydedildi:', savedScore);
         } else if (score > existingScore.score) {
             // Mevcut skordan daha yüksek
             existingScore.score = score;
             existingScore.date = new Date();
+            savedScore = await existingScore.save();
+            console.log('Skor güncellendi:', savedScore);
+        } else {
+            savedScore = existingScore;
+            console.log('Mevcut skor daha yüksek, güncelleme yapılmadı');
         }
 
-        await existingScore.save();
-        console.log('Skor kaydedildi:', existingScore); // Debug için
-        
-        res.json({ success: true, score: existingScore });
+        res.json({ 
+            success: true, 
+            score: savedScore,
+            message: 'Skor başarıyla kaydedildi'
+        });
     } catch (error) {
         console.error('Skor kaydetme hatası:', error);
-        res.status(500).json({ error: 'Skor kaydedilemedi', details: error.message });
+        res.status(500).json({ 
+            error: 'Skor kaydedilemedi', 
+            details: error.message,
+            stack: error.stack 
+        });
     }
 });
 
