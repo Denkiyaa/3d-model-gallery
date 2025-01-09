@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Castle Defense - Leaderboard</title>
+    <style>
+        body {
+            background: #2a2a2a;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #FFD700;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(0,0,0,0.5);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        th {
+            background: #FF0000;
+            color: white;
+        }
+        
+        tr:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .rank {
+            width: 80px;
+            text-align: center;
+        }
+        
+        .score {
+            width: 120px;
+            text-align: right;
+        }
+        
+        .date {
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Castle Defense Leaderboard</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th class="rank">#</th>
+                    <th>Player</th>
+                    <th class="score">High Score</th>
+                    <th class="date">Last Played</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboardBody">
+                <!-- JavaScript ile doldurulacak -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch('http://localhost:3000/api/leaderboard');
+                const players = await response.json();
+                
+                const tbody = document.getElementById('leaderboardBody');
+                tbody.innerHTML = players.map((player, index) => `
+                    <tr>
+                        <td class="rank">${index + 1}</td>
+                        <td>${player.nickname}</td>
+                        <td class="score">${player.highScore}</td>
+                        <td class="date">${new Date(player.lastPlayed).toLocaleString()}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading leaderboard:', error);
+            }
+        }
+
+        // Sayfa yüklendiğinde ve her 30 saniyede bir güncelle
+        loadLeaderboard();
+        setInterval(loadLeaderboard, 30000);
+    </script>
+</body>
+</html> 

@@ -1,17 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Tower Defense Game</title>
+    <title>Castle Defense</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
-    <div class="xp-bar">
-        <div class="xp-fill"></div>
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <h2>Castle Defense</h2>
+            <input type="text" id="nicknameInput" placeholder="Enter your nickname" maxlength="15">
+            <button id="startButton">Start Game</button>
+            <div id="leaderboard" class="leaderboard">
+                <h3>Top Players</h3>
+                <ul id="leaderboardList"></ul>
+            </div>
+        </div>
     </div>
     <div id="waveStatus">Wave 1</div>
+    <canvas id="gameCanvas"></canvas>
     
-    <!-- Admin Paneli -->
+    <!-- Admin Panel -->
     <div id="adminPanel" class="hidden">
         <h2>Admin Paneli</h2>
         <label for="enemySpeed">Düşman Hızı:</label>
@@ -25,6 +33,6 @@
         <button id="saveConfig">Kaydet</button>
     </div>
 
-    <script type="module" src="/game/main.js"></script>
+    <script type="module" src="main.js"></script>
 </body>
 </html>

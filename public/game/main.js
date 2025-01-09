@@ -1,10 +1,7 @@
 import { Game } from './game.js';
 import { ENEMY_CONFIG } from './config.js';
 
-// Oyunu başlat
-window.addEventListener('DOMContentLoaded', () => {
-    window.game = new Game();
-});
+let game = null;
 
 // Admin panel elementlerini seç
 const adminPanel = document.getElementById('adminPanel');
@@ -23,8 +20,8 @@ document.addEventListener('keydown', (event) => {
         if (!adminPanel.classList.contains('hidden')) {
             enemySpeedInput.value = ENEMY_CONFIG.BASE_SPEED;
             currentEnemySpeed.textContent = `Mevcut: ${ENEMY_CONFIG.BASE_SPEED}`;
-            playerDamageInput.value = window.game.player.damage;
-            currentPlayerDamage.textContent = `Mevcut: ${window.game.player.damage}`;
+            playerDamageInput.value = game.player.damage;
+            currentPlayerDamage.textContent = `Mevcut: ${game.player.damage}`;
         }
     }
 });
@@ -38,11 +35,78 @@ saveConfigButton.addEventListener('click', () => {
     ENEMY_CONFIG.BASE_SPEED = newEnemySpeed;
     
     // Oyuncu hasarını güncelle
-    if (window.game && window.game.player) {
-        window.game.player.damage = newPlayerDamage;
+    if (game && game.player) {
+        game.player.damage = newPlayerDamage;
     }
 
     // Mevcut değerleri güncelle
     currentEnemySpeed.textContent = `Mevcut: ${newEnemySpeed}`;
     currentPlayerDamage.textContent = `Mevcut: ${newPlayerDamage}`;
+});
+
+// Local storage'dan high scores'u al
+function getHighScores() {
+    const scores = localStorage.getItem('highScores');
+    return scores ? JSON.parse(scores) : [];
+}
+
+// High score'u kaydet
+function saveHighScore(nickname, score) {
+    let highScores = getHighScores();
+    
+    // Oyuncunun önceki skoru varsa güncelle, yoksa yeni ekle
+    const playerIndex = highScores.findIndex(p => p.nickname === nickname);
+    if (playerIndex !== -1) {
+        if (score > highScores[playerIndex].score) {
+            highScores[playerIndex].score = score;
+        }
+    } else {
+        highScores.push({ nickname, score });
+    }
+    
+    // Skorları sırala
+    highScores.sort((a, b) => b.score - a.score);
+    
+    // Sadece en yüksek 10 skoru tut
+    highScores = highScores.slice(0, 10);
+    
+    // Local storage'a kaydet
+    localStorage.setItem('highScores', JSON.stringify(highScores));
+    return highScores;
+}
+
+// Leaderboard'u güncelle
+function updateLeaderboard() {
+    const highScores = getHighScores();
+    const leaderboardList = document.getElementById('leaderboardList');
+    leaderboardList.innerHTML = highScores.map((player, index) => 
+        `<li>${index + 1}. ${player.nickname} - ${player.score}</li>`
+    ).join('');
+}
+
+// Sayfa yüklendiğinde
+document.addEventListener('DOMContentLoaded', () => {
+    const loginScreen = document.getElementById('loginScreen');
+    const nicknameInput = document.getElementById('nicknameInput');
+    const startButton = document.getElementById('startButton');
+    
+    updateLeaderboard();
+
+    startButton.addEventListener('click', () => {
+        const nickname = nicknameInput.value.trim();
+        if (nickname) {
+            // Login ekranını kaldır
+            loginScreen.style.display = 'none';
+            
+            // Oyunu başlat
+            game = new Game(nickname);
+        }
+    });
+
+    // Enter tuşu ile de başlat
+    nicknameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            startButton.click();
+        }
+    });
 }); 

@@ -6,9 +6,9 @@ export const GAME_CONFIG = {
     SPAWN_DELAY: 2000,
     CASTLE_X: 100,
     CASTLE_WIDTH: 50,
-    BOSS_WAVE_INTERVAL: 10,
-    ELITE_SPAWN_CHANCE: 0.1,
-    MIN_SPAWN_DELAY: 500
+    ENEMY_SPEED: 3,         // Temel düşman hızı
+    BOSS_SPEED: 2,          // Boss hızı
+    ARROW_SPEED: 15         // Ok hızı
 };
 
 export const PLAYER_CONFIG = {
@@ -24,7 +24,7 @@ export const ENEMY_CONFIG = {
     WIDTH: 40,
     HEIGHT: 40,
     BASE_HEALTH: 10,
-    BASE_SPEED: 2,
+    BASE_SPEED: GAME_CONFIG.ENEMY_SPEED,  // Temel düşman hızını buradan al
     BASE_DAMAGE: 1,
     MAX_HEALTH_MULTIPLIER: 10,
     MAX_SPEED_MULTIPLIER: 2,

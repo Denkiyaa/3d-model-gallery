@@ -3,16 +3,77 @@ export class CardSystem {
     constructor(game) {
         this.game = game;
         this.isChoosingCard = false;
+        
+        // Kart simgeleri
+        this.CARD_ICONS = {
+            damage: '🎯',
+            attackSpeed: '⚡',
+            multiShot: '🏹',
+            critical: '✨',
+            arrowSpeed: '💨'  // Ok hızı için simge
+        };
+        
+        // Card pool - kartları rarity'lerine göre grupla
+        this.cardPool = {
+            damage: [
+                { name: 'Sharp Arrows', bonus: 1, description: 'Damage +1', rarity: 'common' },
+                { name: 'Reinforced Arrows', bonus: 2, description: 'Damage +2', rarity: 'rare' },
+                { name: 'Penetrating Arrows', bonus: 3, description: 'Damage +3', rarity: 'epic' }
+            ],
+            attackSpeed: [
+                { name: 'Quick Draw', bonus: 0.97, description: 'Attack Speed +3%', rarity: 'common' },
+                { name: 'Swift Shot', bonus: 0.95, description: 'Attack Speed +5%', rarity: 'rare' },
+                { name: 'Lightning Strike', bonus: 0.92, description: 'Attack Speed +8%', rarity: 'epic' }
+            ],
+            multiShot: [
+                { name: 'Double Shot', bonus: 1, description: 'Arrows +1', rarity: 'rare' }
+            ],
+            critical: [
+                { name: 'Precision Strike', bonus: 0.05, description: 'Critical Chance +5%', rarity: 'common' },
+                { name: 'Deadly Aim', bonus: 0.08, description: 'Critical Chance +8%', rarity: 'rare' },
+                { name: 'Master Marksman', bonus: 0.12, description: 'Critical Chance +12%', rarity: 'epic' }
+            ],
+            arrowSpeed: [
+                { name: 'Swift Arrows', bonus: 0.95, description: 'Arrow Speed +5%', rarity: 'common' },
+                { name: 'Rapid Arrows', bonus: 0.90, description: 'Arrow Speed +10%', rarity: 'rare' },
+                { name: 'Sonic Arrows', bonus: 0.85, description: 'Arrow Speed +15%', rarity: 'epic' }
+            ]
+        };
     }
 
     showCardSelection() {
         this.isChoosingCard = true;
         
-        // Varolan kart seçim ekranını temizle
         const existingCardSelection = document.querySelector('.card-selection');
         if (existingCardSelection) {
             existingCardSelection.remove();
         }
+        
+        const cardTypes = Object.keys(this.cardPool);
+        const isBossWave = this.game.waveManager.currentWave % 5 === 0;
+        
+        let selectedTypes;
+        if (isBossWave) {
+            // Boss wave'de multiShot kartı kesin gelsin, yanına 2 tane random kart
+            selectedTypes = ['multiShot'];
+            const otherTypes = cardTypes.filter(type => type !== 'multiShot');
+            const additionalTypes = this.shuffleArray(otherTypes).slice(0, 2);
+            selectedTypes.push(...additionalTypes);
+        } else {
+            // Normal wave'lerde multiShot kartı gelmesin
+            const availableTypes = cardTypes.filter(type => type !== 'multiShot');
+            selectedTypes = this.shuffleArray(availableTypes).slice(0, 3);
+        }
+        
+        const selectedCards = selectedTypes.map(type => {
+            const cards = this.cardPool[type];
+            const card = cards[Math.floor(Math.random() * cards.length)];
+            return { ...card, type };
+        });
+
+        // Boss wave başlığını özelleştir
+        const waveTitle = isBossWave ? 'Boss Wave Completed!' : 'Wave Completed!';
+        const waveClass = isBossWave ? 'boss-wave' : '';
         
         const cardSelection = document.createElement('div');
         cardSelection.className = 'card-selection';
@@ -30,42 +91,46 @@ export class CardSystem {
         `;
         
         cardSelection.innerHTML = `
-            <h2>Wave ${this.game.waveManager.currentWave} Tamamlandı!</h2>
-            <h3>Geliştirme Kartı Seç</h3>
-            <div class="cards" style="display: flex; gap: 20px; justify-content: center;">
-                <div class="card" style="cursor: pointer; padding: 20px; background: #444; border-radius: 5px;">Hasar +1</div>
-                <div class="card" style="cursor: pointer; padding: 20px; background: #444; border-radius: 5px;">Saldırı Hızı +10%</div>
-                <div class="card" style="cursor: pointer; padding: 20px; background: #444; border-radius: 5px;">Çoklu Ok +1</div>
+            <h2>${waveTitle}</h2>
+            <h3>Choose Your Upgrade</h3>
+            <div class="cards ${waveClass}" style="display: flex; gap: 30px; justify-content: center;">
+                ${selectedCards.map(card => `
+                    <div class="card ${card.rarity}" style="cursor: pointer; padding: 25px; background: rgba(0, 0, 0, 0.6); border-radius: 10px; width: 200px; position: relative;">
+                        <div class="rarity-label">${card.rarity.toUpperCase()}</div>
+                        <div class="card-icon" style="font-size: 48px; margin-bottom: 15px;">
+                            ${this.CARD_ICONS[card.type]}
+                        </div>
+                        <h4 style="margin: 0 0 15px 0; font-size: 20px; color: #fff;">${card.name}</h4>
+                        <p style="margin: 0; color: #ccc; font-size: 16px;">${card.description}</p>
+                    </div>
+                `).join('')}
             </div>
         `;
         
         const cards = cardSelection.querySelectorAll('.card');
-        cards.forEach(card => {
-            card.addEventListener('mouseover', () => {
-                card.style.background = '#666';
-            });
-            card.addEventListener('mouseout', () => {
-                card.style.background = '#444';
-            });
+        cards.forEach((card, index) => {
+            card.addEventListener('click', () => this.selectCard(selectedCards[index]));
         });
-        
-        cards[0].addEventListener('click', () => this.selectCard('damage'));
-        cards[1].addEventListener('click', () => this.selectCard('attackSpeed'));
-        cards[2].addEventListener('click', () => this.selectCard('multiShot'));
         
         document.body.appendChild(cardSelection);
     }
 
-    selectCard(type) {
-        switch(type) {
+    selectCard(card) {
+        switch(card.type) {
             case 'damage':
-                this.game.player.damage += 1;
+                this.game.player.damage += card.bonus;
                 break;
             case 'attackSpeed':
-                this.game.player.attackSpeed *= 0.9;
+                this.game.player.attackSpeed = Math.max(100, this.game.player.attackSpeed * card.bonus);
                 break;
             case 'multiShot':
-                this.game.player.multipleArrows += 1;
+                this.game.player.multipleArrows += card.bonus;
+                break;
+            case 'critical':
+                this.game.player.criticalChance = Math.min(1, (this.game.player.criticalChance || 0) + card.bonus);
+                break;
+            case 'arrowSpeed':
+                this.game.player.arrowSpeed = Math.max(5, this.game.player.arrowSpeed * card.bonus);
                 break;
         }
 
@@ -76,5 +141,13 @@ export class CardSystem {
         
         this.isChoosingCard = false;
         this.game.waveManager.startNewWave();
+    }
+
+    shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
     }
 } 

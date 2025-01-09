@@ -1,5 +1,6 @@
 import { PLAYER_CONFIG } from './config.js';
 import { Arrow } from './Arrow.js';
+import { GAME_CONFIG } from './config.js';
 
 export class Player {
     constructor(canvas) {
@@ -14,6 +15,7 @@ export class Player {
         this.multipleArrows = PLAYER_CONFIG.INITIAL_ARROWS;
         this.criticalChance = 0.1;
         this.lastAttackTime = 0;
+        this.arrowSpeed = GAME_CONFIG.ARROW_SPEED;
     }
 
     update() {
@@ -48,7 +50,7 @@ export class Player {
                         this.x + this.width,
                         this.y + this.height / 2 - 2 + spread,
                         target,
-                        10,
+                        this.arrowSpeed,
                         Math.random() < this.criticalChance
                     );
                     arrows.push(arrow);
@@ -56,5 +58,26 @@ export class Player {
                 this.lastAttackTime = currentTime;
             }
         }
+    }
+
+    shoot(target) {
+        const currentTime = Date.now();
+        if (currentTime - this.lastAttackTime >= this.attackSpeed) {
+            const arrows = [];
+            for (let i = 0; i < this.multipleArrows; i++) {
+                const spread = (i - (this.multipleArrows - 1) / 2) * 10;
+                const arrow = new Arrow(
+                    this.x + this.width,
+                    this.y + this.height / 2 - 2 + spread,
+                    target,
+                    this.arrowSpeed,
+                    Math.random() < this.criticalChance
+                );
+                arrows.push(arrow);
+            }
+            this.lastAttackTime = currentTime;
+            return arrows;
+        }
+        return [];
     }
 } 

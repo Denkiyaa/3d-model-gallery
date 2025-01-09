@@ -7,53 +7,105 @@ export class Enemy {
         this.x = canvas.width - this.baseWidth;
         this.y = Math.random() * (canvas.height - 140) + 50;
         
-        // Düşman zorluk seviyesine göre boyutlandırma
-        const sizeMultiplier = 1 + (wave * 0.1); // Her wave'de %10 artış
-        this.width = this.baseWidth * sizeMultiplier;
-        this.height = this.baseHeight * sizeMultiplier;
+        // Boss wave kontrolü
+        this.isBoss = wave % 5 === 0;
         
-        this.health = ENEMY_CONFIG.BASE_HEALTH * sizeMultiplier; // Canı da boyuta göre ayarlayalım
+        if (this.isBoss) {
+            // Boss özellikleri
+            this.width = this.baseWidth * 3;      // 3 kat daha büyük
+            this.height = this.baseHeight * 3;
+            this.health = ENEMY_CONFIG.BASE_HEALTH * 15;  // 15 kat daha fazla can
+            this.speedX = Math.max(-18, -GAME_CONFIG.BOSS_SPEED);
+            this.damage = ENEMY_CONFIG.BASE_DAMAGE * 3;
+            this.amplitude = 2;    // Daha az sallanma
+            this.frequency = 0.005; // Daha yavaş sallanma
+        } else {
+            // Normal düşman özellikleri
+            const sizeMultiplier = 1 + (wave * 0.1);
+            this.width = this.baseWidth * sizeMultiplier;
+            this.height = this.baseHeight * sizeMultiplier;
+            this.health = ENEMY_CONFIG.BASE_HEALTH * sizeMultiplier;
+            this.speedX = Math.max(-18, -ENEMY_CONFIG.BASE_SPEED);
+            this.damage = ENEMY_CONFIG.BASE_DAMAGE * sizeMultiplier;
+            this.amplitude = Math.random() * 4 + 2;
+            this.frequency = Math.random() * 0.02 + 0.01;
+        }
+
         this.maxHealth = this.health;
-        this.speedX = -ENEMY_CONFIG.BASE_SPEED;
-        this.speedY = 0;
-        
-        // Rastgele hareket için değişkenler
-        this.amplitude = Math.random() * 4 + 2; // Genliği artırdık (2-6 arası)
-        this.frequency = Math.random() * 0.02 + 0.01; // Frekans aynı
         this.time = Math.random() * Math.PI * 2;
-        
-        // Başlangıç Y pozisyonunu sakla
         this.initialY = this.y;
-        
-        this.damage = ENEMY_CONFIG.BASE_DAMAGE * sizeMultiplier; // Hasarı da boyuta göre ayarlayalım
-        
-        this.isBoss = false;
         this.isElite = false;
     }
 
     draw(ctx) {
-        // Düşman gövdesi
-        ctx.fillStyle = this.isBoss ? '#800000' : 
-                       this.isElite ? '#FF4500' : '#FF0000';
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-        
+        if (this.isBoss) {
+            // Boss çizimi
+            ctx.fillStyle = '#800000';
+            
+            // Ana gövde
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+            
+            // Zırh detayları
+            ctx.fillStyle = '#600000';
+            // Üst zırh
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(this.x + this.width, this.y);
+            ctx.lineTo(this.x + this.width - 20, this.y + 20);
+            ctx.lineTo(this.x + 20, this.y + 20);
+            ctx.fill();
+            
+            // Alt zırh
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y + this.height);
+            ctx.lineTo(this.x + this.width, this.y + this.height);
+            ctx.lineTo(this.x + this.width - 20, this.y + this.height - 20);
+            ctx.lineTo(this.x + 20, this.y + this.height - 20);
+            ctx.fill();
+            
+            // Göz
+            ctx.fillStyle = '#FF0000';
+            const eyeSize = this.width * 0.2;
+            ctx.beginPath();
+            ctx.arc(this.x + this.width * 0.7, this.y + this.height * 0.4, eyeSize, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Göz parıltısı
+            ctx.fillStyle = '#FF6666';
+            ctx.beginPath();
+            ctx.arc(this.x + this.width * 0.7 + 5, this.y + this.height * 0.4 - 5, eyeSize * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Dişler
+            ctx.fillStyle = '#FFFFFF';
+            const toothWidth = this.width * 0.1;
+            const toothHeight = this.height * 0.15;
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                ctx.moveTo(this.x + this.width * 0.4 + i * toothWidth * 1.5, this.y + this.height * 0.7);
+                ctx.lineTo(this.x + this.width * 0.4 + i * toothWidth * 1.5 + toothWidth, this.y + this.height * 0.7);
+                ctx.lineTo(this.x + this.width * 0.4 + i * toothWidth * 1.5 + toothWidth/2, this.y + this.height * 0.7 + toothHeight);
+                ctx.fill();
+            }
+        } else {
+            // Normal düşman çizimi
+            ctx.fillStyle = '#FF0000';
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
+
         // Can barı arkaplanı
         ctx.fillStyle = '#FF0000';
-        ctx.fillRect(this.x, this.y - 10, this.width, 5);
+        ctx.fillRect(this.x, this.y - 15, this.width, 8);
         
         // Mevcut can
-        ctx.fillStyle = this.isBoss ? '#FFD700' : 
-                       this.isElite ? '#00FF00' : '#32CD32';
-        const healthPercentage = this.health / this.maxHealth;
-        ctx.fillRect(this.x, this.y - 10, this.width * healthPercentage, 5);
+        const healthPercentage = Math.max(0, Math.min(1, this.health / this.maxHealth));
+        ctx.fillStyle = this.isBoss ? '#FFD700' : '#32CD32';
+        ctx.fillRect(this.x, this.y - 15, this.width * healthPercentage, 8);
     }
 
     update() {
-        // Yatay hareket
         this.x += this.speedX;
-        
-        // Sinüs dalgası kullanarak yukarı-aşağı hareket
-        this.time += 0.08; // Zamanı biraz daha hızlı artırdık (0.05'ten 0.08'e)
+        this.time += this.isBoss ? 0.03 : 0.08;  // Boss daha yavaş sallanır
         this.y = this.initialY + Math.sin(this.time) * this.amplitude;
     }
 } 
