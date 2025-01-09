@@ -33,8 +33,8 @@ mongoose.connect(MONGODB_URI, {
 // Skor şeması
 const ScoreSchema = new mongoose.Schema({
     nickname: String,
-    highScore: Number,
-    lastPlayed: { type: Date, default: Date.now }
+    score: Number,
+    date: { type: Date, default: Date.now }
 });
 
 const Score = mongoose.model('Score', ScoreSchema);
@@ -69,28 +69,39 @@ app.post('/api/login', async (req, res) => {
 });
 
 app.post('/api/score', async (req, res) => {
-    const { nickname, score } = req.body;
     try {
-        const player = await Score.findOne({ nickname });
-        if (player && score > player.highScore) {
-            player.highScore = score;
-            player.lastPlayed = new Date();
-            await player.save();
+        const { nickname, score } = req.body;
+        
+        // Mevcut en yüksek skoru kontrol et
+        const existingScore = await Score.findOne({ nickname });
+        
+        if (!existingScore || score > existingScore.score) {
+            // Yeni skor veya daha yüksek skor
+            if (existingScore) {
+                existingScore.score = score;
+                existingScore.date = new Date();
+                await existingScore.save();
+            } else {
+                await Score.create({ nickname, score });
+            }
         }
-        res.json(player);
+        
+        res.json({ success: true });
     } catch (error) {
-        res.status(500).json({ error: 'Sunucu hatası' });
+        console.error('Skor kaydetme hatası:', error);
+        res.status(500).json({ error: 'Skor kaydedilemedi' });
     }
 });
 
 app.get('/api/leaderboard', async (req, res) => {
     try {
         const scores = await Score.find()
-            .sort({ highScore: -1 })
+            .sort({ score: -1 })
             .limit(10);
         res.json(scores);
     } catch (error) {
-        res.status(500).json({ error: 'Sunucu hatası' });
+        console.error('Leaderboard hatası:', error);
+        res.status(500).json({ error: 'Leaderboard alınamadı' });
     }
 });
 

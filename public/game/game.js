@@ -522,24 +522,47 @@ export class Game {
         
         this.isGameOver = true;
         
-        // Skoru kaydet
+        // Skoru hem local storage'a hem de MongoDB'ye kaydet
         const data = {
             nickname: this.nickname,
             score: this.score
         };
         
-        // Mevcut skorları al
+        // Local storage için kaydet
         let highScores = JSON.parse(localStorage.getItem('highScores') || '[]');
-        
-        // Yeni skoru ekle
         highScores.push(data);
-        
-        // Skorları sırala ve en yüksek 10 skoru tut
         highScores.sort((a, b) => b.score - a.score);
         highScores = highScores.slice(0, 10);
-        
-        // Skorları kaydet
         localStorage.setItem('highScores', JSON.stringify(highScores));
+        
+        // MongoDB'ye kaydet
+        fetch('/api/score', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                nickname: this.nickname,
+                score: this.score
+            })
+        })
+        .then(response => response.json())
+        .then(data => console.log('Skor kaydedildi:', data))
+        .catch(error => console.error('Skor kaydetme hatası:', error));
+
+        // Leaderboard'u güncelle
+        fetch('/api/leaderboard')
+            .then(response => response.json())
+            .then(scores => {
+                const leaderboardList = document.getElementById('leaderboardList');
+                if (leaderboardList) {
+                    leaderboardList.innerHTML = scores
+                        .map((score, index) => `
+                            <li>${index + 1}. ${score.nickname} - ${score.score}</li>
+                        `).join('');
+                }
+            })
+            .catch(error => console.error('Leaderboard güncelleme hatası:', error));
         
         // Oyunu durdur
         this.enemies = [];
