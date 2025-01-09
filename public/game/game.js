@@ -542,28 +542,10 @@ export class Game {
             return response.json();
         })
         .then(data => {
-            console.log('Skor kaydedildi:', data);
-            if (!data.success) {
-                throw new Error('Skor kaydetme başarısız');
-            }
-            // Leaderboard'u güncelle
-            return fetch('/api/leaderboard');
-        })
-        .then(response => response.json())
-        .then(scores => {
-            console.log('Leaderboard güncellendi:', scores);
-            const leaderboardList = document.getElementById('leaderboardList');
-            if (leaderboardList) {
-                leaderboardList.innerHTML = scores
-                    .map((score, index) => `
-                        <li>${index + 1}. ${score.nickname} - ${score.score} 
-                            (${new Date(score.date).toLocaleDateString()})</li>
-                    `).join('');
-            }
+            console.log('Skor başarıyla kaydedildi:', data);
         })
         .catch(error => {
-            console.error('Skor işleme hatası:', error);
-            alert('Skor kaydedilirken bir hata oluştu: ' + error.message);
+            console.error('Skor kaydetme hatası:', error);
         });
         
         // Oyunu durdur
