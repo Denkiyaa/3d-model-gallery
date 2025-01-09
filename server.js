@@ -84,9 +84,11 @@ app.get('/game', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/game/index.html'));
 });
 
-// Ana sayfa için catch-all route
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/index.html'));
+// React uygulaması için tüm route'ları index.html'e yönlendir
+app.get('/*', (req, res) => {
+    if (!req.path.startsWith('/game')) {
+        res.sendFile(path.join(__dirname, 'public/index.html'));
+    }
 });
 
 const PORT = 4000;
