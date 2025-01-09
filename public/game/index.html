@@ -22,35 +22,88 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <div id="leaderboardContainer" class="leaderboard-container">
-        <button class="leaderboard-close">&times;</button>
-        <h2>Hall of Fame</h2>
-        <div class="scroll-decoration top"></div>
-        <ul id="leaderboardList"></ul>
-        <div class="scroll-decoration bottom"></div>
+        <div id="leaderboardContainer" class="leaderboard-container">
+            <button class="leaderboard-close">&times;</button>
+            <h2>Hall of Fame</h2>
+            <div class="scroll-decoration top"></div>
+            <ul id="leaderboardList"></ul>
+            <div class="scroll-decoration bottom"></div>
+        </div>
     </div>
 
     <div id="waveStatus">Wave 1</div>
     <canvas id="gameCanvas"></canvas>
 
-    <script type="module" src="main.js"></script>
     <script>
-        document.getElementById('showLeaderboard').addEventListener('click', () => {
+        // Sayfa yüklendiğinde
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginScreen = document.getElementById('loginScreen');
+            const nicknameInput = document.getElementById('nicknameInput');
+            const startButton = document.getElementById('startButton');
             const leaderboardContainer = document.getElementById('leaderboardContainer');
-            leaderboardContainer.style.display = 'block';
             
-            const highScores = JSON.parse(localStorage.getItem('highScores') || '[]');
-            const leaderboardList = document.getElementById('leaderboardList');
-            leaderboardList.innerHTML = highScores
-                .map((score, index) => `
-                    <li>${index + 1}. ${score.nickname} - ${score.score}</li>
-                `).join('');
-        });
+            console.log('DOM yüklendi'); // Debug için
 
-        document.querySelector('.leaderboard-close').addEventListener('click', () => {
-            document.getElementById('leaderboardContainer').style.display = 'none';
+            // Start Game butonu
+            startButton.addEventListener('click', () => {
+                console.log('Start butonuna tıklandı'); // Debug için
+                const nickname = nicknameInput.value.trim();
+                if (nickname) {
+                    loginScreen.style.display = 'none';
+                    // Game modülünü dinamik olarak yükle
+                    import('./game.js')
+                        .then(module => {
+                            new module.Game(nickname);
+                        })
+                        .catch(error => console.error('Game yüklenirken hata:', error));
+                }
+            });
+
+            // Enter tuşu ile başlatma
+            nicknameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    startButton.click();
+                }
+            });
+
+            // Leaderboard butonu
+            const showLeaderboardButton = document.getElementById('showLeaderboard');
+            showLeaderboardButton.addEventListener('click', () => {
+                console.log('Leaderboard butonuna tıklandı'); // Debug için
+                
+                // Eğer leaderboard zaten görünüyorsa, gizle
+                if (leaderboardContainer.style.display === 'block') {
+                    leaderboardContainer.style.display = 'none';
+                    return;
+                }
+                
+                // Leaderboard'u göster
+                leaderboardContainer.style.display = 'block';
+                
+                // Skorları güncelle
+                const highScores = JSON.parse(localStorage.getItem('highScores') || '[]');
+                const leaderboardList = document.getElementById('leaderboardList');
+                leaderboardList.innerHTML = highScores
+                    .map((score, index) => `
+                        <li>${index + 1}. ${score.nickname} - ${score.score}</li>
+                    `).join('');
+            });
+
+            // Leaderboard kapatma butonu
+            const closeButton = document.querySelector('.leaderboard-close');
+            if (closeButton) {
+                closeButton.addEventListener('click', () => {
+                    leaderboardContainer.style.display = 'none';
+                });
+            }
+
+            // Leaderboard dışına tıklayınca kapat
+            leaderboardContainer.addEventListener('click', (e) => {
+                if (e.target === leaderboardContainer) {
+                    leaderboardContainer.style.display = 'none';
+                }
+            });
         });
     </script>
 </body>

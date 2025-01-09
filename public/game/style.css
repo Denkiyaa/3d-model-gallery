@@ -366,11 +366,17 @@ span {
 }
 
 .leaderboard-container {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     background: rgba(0, 0, 0, 0.95);
     padding: 40px;
     border-radius: 15px;
     border: 3px solid #FFD700;
     min-width: 300px;
+    z-index: 2000;
 }
 
 .leaderboard-container h2 {
