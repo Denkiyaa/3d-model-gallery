@@ -87,29 +87,35 @@ app.get('/manifest.json', (req, res) => {
 
 // API route'ları MongoDB ile güncellenmiş hali
 app.post('/api/login', async (req, res) => {
+    console.log('Login isteği geldi:', req.body);
     const { nickname } = req.body;
     try {
         let player = await Score.findOne({ nickname });
         if (!player) {
             player = new Score({
                 nickname,
-                highScore: 0
+                highScore: 0,
+                lastPlayed: new Date()
             });
+            console.log('Yeni oyuncu oluşturuluyor:', player);
             await player.save();
         }
+        console.log('Login başarılı:', player);
         res.json(player);
     } catch (error) {
+        console.error('Login hatası:', error);
         res.status(500).json({ error: 'Sunucu hatası' });
     }
 });
 
 app.post('/api/score', async (req, res) => {
+    console.log('Skor güncelleme isteği:', req.body);
     try {
-        console.log('Skor kaydetme isteği:', req.body);
         const { nickname, score } = req.body;
 
         // Mevcut oyuncuyu bul veya yeni oluştur
         let player = await Score.findOne({ nickname });
+        console.log('Bulunan oyuncu:', player);
         
         if (!player) {
             // Yeni oyuncu
@@ -118,15 +124,17 @@ app.post('/api/score', async (req, res) => {
                 highScore: score,
                 lastPlayed: new Date()
             });
+            console.log('Yeni oyuncu oluşturuluyor:', player);
         } else if (score > player.highScore) {
             // Yüksek skor güncelleme
+            console.log(`Skor güncelleniyor: ${player.highScore} -> ${score}`);
             player.highScore = score;
             player.lastPlayed = new Date();
         }
 
         // Kaydet
         await player.save();
-        console.log('Skor kaydedildi:', player);
+        console.log('Oyuncu kaydedildi:', player);
 
         res.json({ 
             success: true, 
