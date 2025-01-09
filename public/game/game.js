@@ -3,41 +3,6 @@ import { Player } from './Player.js';
 import { WaveManager } from './WaveManager.js';
 import { CardSystem } from './CardSystem.js';
 
-export function saveHighScore(nickname, score) {
-    const data = {
-        nickname: nickname,
-        score: score
-    };
-    
-    localStorage.setItem('lastScore', JSON.stringify(data));
-    
-    let highScores = JSON.parse(localStorage.getItem('highScores') || '[]');
-    
-    // Mevcut skoru ekle
-    highScores.push(data);
-    
-    // Skorları sırala
-    highScores.sort((a, b) => b.score - a.score);
-    
-    // Sadece en yüksek 10 skoru tut
-    highScores = highScores.slice(0, 10);
-    
-    // Local storage'a kaydet
-    localStorage.setItem('highScores', JSON.stringify(highScores));
-}
-
-export function updateLeaderboard() {
-    const highScores = JSON.parse(localStorage.getItem('highScores') || '[]');
-    const leaderboardList = document.getElementById('leaderboardList');
-    
-    if (leaderboardList) {
-        leaderboardList.innerHTML = highScores
-            .map((score, index) => `
-                <li>${index + 1}. ${score.nickname} - ${score.score}</li>
-            `).join('');
-    }
-}
-
 export class Game {
     constructor(nickname) {
         this.nickname = nickname;
@@ -554,9 +519,9 @@ export class Game {
         
         this.isGameOver = true;
         
-        // Skoru kaydet
-        saveHighScore(this.nickname, this.score);
-        updateLeaderboard();
+        // Sınıf metodlarını this ile çağıralım
+        this.saveHighScore();
+        this.updateLeaderboard();
         
         // Oyunu durdur
         this.enemies = [];
@@ -620,6 +585,35 @@ export class Game {
             console.error('Game Over error:', error);
             // Hata durumunda en azından sayfayı yenileyelim
             window.location.reload();
+        }
+    }
+
+    // saveHighScore metodunu sınıf içine taşıyalım
+    saveHighScore() {
+        const data = {
+            nickname: this.nickname,
+            score: this.score
+        };
+        
+        localStorage.setItem('lastScore', JSON.stringify(data));
+        
+        let highScores = JSON.parse(localStorage.getItem('highScores') || '[]');
+        highScores.push(data);
+        highScores.sort((a, b) => b.score - a.score);
+        highScores = highScores.slice(0, 10);
+        localStorage.setItem('highScores', JSON.stringify(highScores));
+    }
+
+    // updateLeaderboard metodunu sınıf içine taşıyalım
+    updateLeaderboard() {
+        const highScores = JSON.parse(localStorage.getItem('highScores') || '[]');
+        const leaderboardList = document.getElementById('leaderboardList');
+        
+        if (leaderboardList) {
+            leaderboardList.innerHTML = highScores
+                .map((score, index) => `
+                    <li>${index + 1}. ${score.nickname} - ${score.score}</li>
+                `).join('');
         }
     }
 }
