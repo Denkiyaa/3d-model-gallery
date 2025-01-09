@@ -3,6 +3,39 @@ import { Player } from './Player.js';
 import { WaveManager } from './WaveManager.js';
 import { CardSystem } from './CardSystem.js';
 
+function saveHighScore(nickname, score) {
+    try {
+        // Skoru sunucuya kaydet
+        fetch('/api/score', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ nickname, score })
+        });
+    } catch (error) {
+        console.error('Score kaydetme hatası:', error);
+    }
+}
+
+function updateLeaderboard() {
+    try {
+        fetch('/api/leaderboard')
+            .then(response => response.json())
+            .then(scores => {
+                const leaderboardList = document.getElementById('leaderboardList');
+                if (leaderboardList) {
+                    leaderboardList.innerHTML = scores
+                        .map((score, index) => `
+                            <li>${index + 1}. ${score.nickname} - ${score.score}</li>
+                        `).join('');
+                }
+            });
+    } catch (error) {
+        console.error('Leaderboard güncelleme hatası:', error);
+    }
+}
+
 export class Game {
     constructor(nickname) {
         this.nickname = nickname;
@@ -518,6 +551,10 @@ export class Game {
         if (this.isGameOver) return;
         
         this.isGameOver = true;
+        
+        // Skoru kaydet
+        saveHighScore(this.nickname, this.score);
+        updateLeaderboard();
         
         // Oyunu durdur
         this.enemies = [];
