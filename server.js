@@ -70,26 +70,34 @@ app.post('/api/login', async (req, res) => {
 
 app.post('/api/score', async (req, res) => {
     try {
+        console.log('Gelen skor verisi:', req.body); // Debug için
+
         const { nickname, score } = req.body;
         
         // Mevcut en yüksek skoru kontrol et
-        const existingScore = await Score.findOne({ nickname });
+        let existingScore = await Score.findOne({ nickname });
+        console.log('Mevcut skor:', existingScore); // Debug için
         
-        if (!existingScore || score > existingScore.score) {
-            // Yeni skor veya daha yüksek skor
-            if (existingScore) {
-                existingScore.score = score;
-                existingScore.date = new Date();
-                await existingScore.save();
-            } else {
-                await Score.create({ nickname, score });
-            }
+        if (!existingScore) {
+            // Yeni oyuncu
+            existingScore = new Score({
+                nickname,
+                score,
+                date: new Date()
+            });
+        } else if (score > existingScore.score) {
+            // Mevcut skordan daha yüksek
+            existingScore.score = score;
+            existingScore.date = new Date();
         }
+
+        await existingScore.save();
+        console.log('Skor kaydedildi:', existingScore); // Debug için
         
-        res.json({ success: true });
+        res.json({ success: true, score: existingScore });
     } catch (error) {
         console.error('Skor kaydetme hatası:', error);
-        res.status(500).json({ error: 'Skor kaydedilemedi' });
+        res.status(500).json({ error: 'Skor kaydedilemedi', details: error.message });
     }
 });
 
@@ -98,6 +106,7 @@ app.get('/api/leaderboard', async (req, res) => {
         const scores = await Score.find()
             .sort({ score: -1 })
             .limit(10);
+        console.log('Leaderboard skorları:', scores); // Debug için
         res.json(scores);
     } catch (error) {
         console.error('Leaderboard hatası:', error);
