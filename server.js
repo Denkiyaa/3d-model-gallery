@@ -16,29 +16,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/game', express.static(path.join(__dirname, 'public/game')));
 app.use('/models', express.static(path.join(__dirname, 'public/models')));
 
-// MongoDB bağlantısı
-const MONGODB_URI = 'mongodb://denkiya:1327@vmi2186126.contaboserver.net:27017/gamedb?authSource=gamedb';
-
-mongoose.connect(MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
-.then(() => {
-    console.log('MongoDB bağlantısı başarılı');
-    // Test amaçlı bir skor ekleyelim
-    return Score.create({
-        nickname: 'test',
-        score: 100,
-        date: new Date()
-    });
-})
-.then(() => {
-    console.log('Test skoru başarıyla eklendi');
-})
-.catch((err) => {
-    console.error('MongoDB hatası:', err);
-});
-
 // Skor şeması
 const ScoreSchema = new mongoose.Schema({
     nickname: { type: String, required: true },
@@ -47,6 +24,32 @@ const ScoreSchema = new mongoose.Schema({
 }, { collection: 'scores' });
 
 const Score = mongoose.model('Score', ScoreSchema);
+
+// MongoDB bağlantısı
+const MONGODB_URI = 'mongodb://denkiya:1327@vmi2186126.contaboserver.net:27017/gamedb?authSource=admin';
+
+mongoose.connect(MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+.then(() => {
+    console.log('MongoDB bağlantısı başarılı');
+})
+.catch((err) => {
+    console.error('MongoDB hatası:', err);
+});
+
+mongoose.connection.on('connected', () => {
+    console.log('Mongoose bağlantısı başarılı');
+});
+
+mongoose.connection.on('error', (err) => {
+    console.error('Mongoose bağlantı hatası:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+    console.log('Mongoose bağlantısı kesildi');
+});
 
 // Önce spesifik route'ları tanımlayalım
 app.get('/favicon.ico', (req, res) => {
@@ -80,48 +83,28 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/score', async (req, res) => {
     try {
         console.log('Gelen skor verisi:', req.body);
-
         const { nickname, score } = req.body;
         
-        if (!nickname || !score) {
-            throw new Error('Nickname ve score zorunludur');
-        }
+        // Yeni skor dokümanı oluştur
+        const newScore = new Score({
+            nickname: nickname,
+            score: score,
+            date: new Date()
+        });
 
-        // Mevcut en yüksek skoru kontrol et
-        let existingScore = await Score.findOne({ nickname });
-        console.log('Mevcut skor:', existingScore);
-        
-        let savedScore;
-        if (!existingScore) {
-            // Yeni oyuncu
-            savedScore = await Score.create({
-                nickname,
-                score,
-                date: new Date()
-            });
-            console.log('Yeni skor kaydedildi:', savedScore);
-        } else if (score > existingScore.score) {
-            // Mevcut skordan daha yüksek
-            existingScore.score = score;
-            existingScore.date = new Date();
-            savedScore = await existingScore.save();
-            console.log('Skor güncellendi:', savedScore);
-        } else {
-            savedScore = existingScore;
-            console.log('Mevcut skor daha yüksek, güncelleme yapılmadı');
-        }
+        // Kaydet
+        const savedScore = await newScore.save();
+        console.log('Kaydedilen skor:', savedScore);
 
         res.json({ 
             success: true, 
-            score: savedScore,
-            message: 'Skor başarıyla kaydedildi'
+            score: savedScore 
         });
     } catch (error) {
         console.error('Skor kaydetme hatası:', error);
         res.status(500).json({ 
             error: 'Skor kaydedilemedi', 
-            details: error.message,
-            stack: error.stack 
+            details: error.message 
         });
     }
 });
