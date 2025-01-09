@@ -522,7 +522,24 @@ export class Game {
         
         this.isGameOver = true;
         
-        console.log('Game Over başladı - Skor:', this.score); // Debug log
+        // Bildirim div'i oluştur
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 9999;
+            font-family: Arial, sans-serif;
+            max-width: 80%;
+            word-wrap: break-word;
+        `;
+        document.body.appendChild(notification);
+        notification.textContent = `Skor kaydediliyor... (${this.score} puan)`;
         
         // Skoru MongoDB'ye kaydet
         fetch('/api/score', {
@@ -536,21 +553,34 @@ export class Game {
             })
         })
         .then(response => {
-            console.log('Skor kaydetme yanıtı:', response.status); // Debug log
             if (!response.ok) {
                 return response.json().then(err => {
-                    console.error('Sunucu hatası:', err); // Debug log
+                    notification.style.background = 'rgba(255, 0, 0, 0.8)';
+                    notification.textContent = `Hata: ${err.details || err.error}`;
                     throw new Error(`Skor kaydetme hatası: ${err.details || err.error}`);
                 });
             }
             return response.json();
         })
         .then(data => {
-            console.log('Skor başarıyla kaydedildi:', data);
+            notification.style.background = 'rgba(0, 255, 0, 0.8)';
+            notification.textContent = `Skor başarıyla kaydedildi! (${this.score} puan)`;
+            setTimeout(() => notification.remove(), 5000); // 5 saniye sonra bildirimi kaldır
         })
         .catch(error => {
-            console.error('Skor kaydetme hatası:', error);
+            notification.style.background = 'rgba(255, 0, 0, 0.8)';
+            notification.textContent = `Hata: ${error.message}`;
+            setTimeout(() => notification.remove(), 5000);
         });
+        
+        // Oyunu durdur
+        this.enemies = [];
+        this.arrows = [];
+        
+        // Canvas'ı temizle
+        if (this.ctx && this.canvas) {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
         
         try {
             // UI elementlerini temizle
@@ -574,27 +604,22 @@ export class Game {
                     <p>Wave: ${this.waveManager.currentWave}</p>
                     <p>Final Score: ${this.score}</p>
                     <button class="restart-button">Play Again</button>
-                    <p class="save-status">Skor kaydediliyor...</p>
                 </div>
             `;
             
             document.body.appendChild(gameOverScreen);
 
-            // Restart butonu - otomatik yenileme yerine manuel yenileme
+            // Restart butonu
             const restartButton = gameOverScreen.querySelector('.restart-button');
             if (restartButton) {
                 restartButton.addEventListener('click', () => {
-                    const confirmRestart = confirm('Logları kontrol ettiniz mi? Sayfa yenilenecek.');
-                    if (confirmRestart) {
-                        window.location.reload();
-                    }
+                    window.location.reload();
                 });
             }
 
         } catch (error) {
-            console.error('Game Over UI hatası:', error);
-            // Otomatik yenilemeyi kaldırdık
-            alert('Game Over UI hatası: ' + error.message);
+            console.error('Game Over error:', error);
+            window.location.reload();
         }
     }
 }

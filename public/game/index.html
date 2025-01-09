@@ -19,9 +19,6 @@
                 <div class="button-group">
                     <button id="startButton" class="medieval-button">Start Game</button>
                     <button id="showLeaderboard" class="medieval-button gold">Leaderboard</button>
-                    <button id="testMongoDB" class="medieval-button" style="background: #ff4444;">
-                        Test MongoDB
-                    </button>
                 </div>
             </div>
         </div>
@@ -208,34 +205,6 @@
             // Mevcut değerleri göster
             document.getElementById('currentEnemySpeed').textContent = `Mevcut: ${enemySpeed}`;
             document.getElementById('currentPlayerDamage').textContent = `Mevcut: ${playerDamage}`;
-        });
-
-        // Test butonu için event listener
-        document.getElementById('testMongoDB').addEventListener('click', () => {
-            const testData = {
-                nickname: 'test_user_' + Date.now(),
-                score: Math.floor(Math.random() * 1000)
-            };
-            
-            fetch('/api/score', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(testData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Test verisi kaydedildi:', data);
-                alert('Test başarılı! Kaydedilen veri: ' + JSON.stringify(data, null, 2));
-                
-                // Hemen leaderboard'u güncelle
-                document.getElementById('showLeaderboard').click();
-            })
-            .catch(error => {
-                console.error('Test hatası:', error);
-                alert('Test başarısız: ' + error.message);
-            });
         });
     </script>
 </body>
