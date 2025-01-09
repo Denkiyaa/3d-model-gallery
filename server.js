@@ -42,14 +42,22 @@ ScoreSchema.index({ score: -1 });
 const Score = mongoose.model('Score', ScoreSchema);
 
 // MongoDB bağlantısı
-const MONGODB_URI = 'mongodb://admin:1327@vmi2186126.contaboserver.net:27017/gamedb';
+const MONGODB_URI = 'mongodb://denkiya:1327@vmi2186126.contaboserver.net:27017/gamedb?authSource=gamedb';
 
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 })
-.then(() => {
+.then(async () => {
     console.log('MongoDB bağlantısı başarılı');
+    
+    // Test bağlantısı
+    const testConnection = await mongoose.connection.db.command({ ping: 1 });
+    console.log('Veritabanı ping testi:', testConnection);
+    
+    // Koleksiyonları listele
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    console.log('Mevcut koleksiyonlar:', collections.map(c => c.name));
 })
 .catch((err) => {
     console.error('MongoDB bağlantı hatası:', err);
@@ -130,16 +138,25 @@ app.post('/api/score', async (req, res) => {
 app.get('/api/leaderboard', async (req, res) => {
     try {
         // Bağlantı durumunu kontrol et
-        console.log('MongoDB bağlantı durumu:', mongoose.connection.readyState);
-        
+        if (mongoose.connection.readyState !== 1) {
+            throw new Error(`Veritabanı bağlantısı aktif değil (${mongoose.connection.readyState})`);
+        }
+
         // Tüm skorları getir
         const scores = await Score.find()
             .sort({ score: -1 })
             .limit(10)
+            .select('nickname score date -_id')
             .exec();
         
         console.log('Bulunan skorlar:', scores);
-        res.json(scores || []);
+
+        // Boş array kontrolü
+        if (!scores || scores.length === 0) {
+            return res.json([]);
+        }
+
+        res.json(scores);
     } catch (error) {
         console.error('Leaderboard hatası:', error);
         res.status(500).json({ 
