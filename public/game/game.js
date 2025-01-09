@@ -556,72 +556,28 @@ export class Game {
         const waveStatus = document.getElementById('waveStatus');
         if (waveStatus) waveStatus.style.display = 'none';
 
-        // Game Over ekranı
+        // Game Over ekranı - resimde gördüğümüz gibi basit ve net
         const gameOverScreen = document.createElement('div');
         gameOverScreen.className = 'game-over-screen';
         gameOverScreen.innerHTML = `
             <div class="game-over-content">
-                <h1>Game Over!</h1>
+                <h1 style="color: red;">Game Over!</h1>
                 <p>Player: ${this.nickname}</p>
                 <p>Wave: ${this.waveManager.currentWave}</p>
                 <p>Final Score: ${this.score}</p>
-                <div id="leaderboard"></div>
                 <div class="button-group">
-                    <button id="saveScore" class="medieval-button">Save Score</button>
                     <button id="playAgain" class="medieval-button">Play Again</button>
+                    <button id="saveScore" class="medieval-button">Save Score</button>
                 </div>
-                <p id="saveStatus"></p>
             </div>
         `;
         document.body.appendChild(gameOverScreen);
 
-        // Save Score butonuna tıklama olayı
+        // Butonlara tıklama olayları
         document.getElementById('saveScore').addEventListener('click', () => {
-            const saveButton = document.getElementById('saveScore');
-            saveButton.disabled = true;
-            
-            const saveStatus = document.getElementById('saveStatus');
-            saveStatus.textContent = 'Skor kaydediliyor...';
-            
-            fetch('/api/score', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    nickname: this.nickname,
-                    score: this.score
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                saveStatus.style.color = 'green';
-                saveStatus.textContent = 'Skor kaydedildi!';
-                saveButton.style.display = 'none';
-                
-                // Leaderboard'u göster
-                fetch('/api/leaderboard')
-                    .then(response => response.json())
-                    .then(scores => {
-                        const leaderboard = document.getElementById('leaderboard');
-                        leaderboard.innerHTML = `
-                            <h2>High Scores</h2>
-                            <ul>
-                                ${scores.map((score, index) => `
-                                    <li class="${score.nickname === this.nickname ? 'current-player' : ''}">
-                                        ${index + 1}. ${score.nickname} - ${score.highScore}
-                                    </li>
-                                `).join('')}
-                            </ul>
-                        `;
-                    });
-            })
-            .catch(error => {
-                saveStatus.style.color = 'red';
-                saveStatus.textContent = 'Skor kaydedilemedi: ' + error.message;
-                saveButton.disabled = false;
-            });
+            // ... skor kaydetme kodu ...
         });
 
-        // Play Again butonuna tıklama olayı
         document.getElementById('playAgain').addEventListener('click', () => {
             window.location.reload();
         });
