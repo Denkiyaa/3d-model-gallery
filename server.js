@@ -10,11 +10,27 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // MongoDB bağlantısı
-mongoose.connect('mongodb://localhost:27017/castle_defense', {
+mongoose.connect('mongodb://localhost:27017/leaderboard', {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(() => {
     console.log('MongoDB bağlantısı başarılı');
+    
+    // Test verisi ekle
+    const testPlayer = new Player({
+        nickname: "TestPlayer",
+        highScore: 100,
+        lastPlayed: new Date()
+    });
+    
+    testPlayer.save()
+        .then(() => console.log('Test verisi eklendi'))
+        .catch(err => {
+            if(err.code !== 11000) { // 11000: duplicate key error
+                console.error('Test veri ekleme hatası:', err);
+            }
+        });
+        
 }).catch((err) => {
     console.error('MongoDB bağlantı hatası:', err);
 });
@@ -95,6 +111,8 @@ app.get('/api/leaderboard', async (req, res) => {
 });
 
 const PORT = 3000;
-app.listen(PORT, () => {
+const IP = '0.0.0.0'; // Tüm IP'lerden erişime izin ver
+
+app.listen(PORT, IP, () => {
     console.log(`Server running on port ${PORT}`);
 });
