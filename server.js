@@ -7,8 +7,8 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use('/static', express.static(path.join(__dirname, 'public')));
-app.use('/', express.static(path.join(__dirname, 'public/game')));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/game', express.static(path.join(__dirname, 'public/game')));
 
 const SCORES_FILE = path.join(__dirname, 'data', 'scores.json');
 
@@ -79,9 +79,14 @@ app.get('/api/leaderboard', (req, res) => {
     res.json(scores);
 });
 
-// En son catch-all route'u ekleyelim
-app.get('*', (req, res) => {
+// Oyun route'u
+app.get('/game', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/game/index.html'));
+});
+
+// Ana sayfa için catch-all route
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
 const PORT = 4000;
