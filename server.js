@@ -179,6 +179,40 @@ app.get('/*', (req, res) => {
     }
 });
 
+// Test fonksiyonu ekle
+app.post('/api/test-write', async (req, res) => {
+    try {
+        // Test verisi oluştur
+        const testScore = new Score({
+            nickname: 'test_api',
+            highScore: 999,
+            lastPlayed: new Date()
+        });
+
+        // Kaydetmeyi dene
+        const savedScore = await testScore.save();
+        console.log('Test yazma başarılı:', savedScore);
+
+        res.json({ 
+            success: true, 
+            message: 'Test yazma başarılı',
+            score: savedScore 
+        });
+    } catch (error) {
+        console.error('Test yazma hatası:', {
+            message: error.message,
+            stack: error.stack,
+            mongoState: mongoose.connection.readyState
+        });
+        
+        res.status(500).json({ 
+            error: 'Test yazma başarısız',
+            details: error.message,
+            connected: isConnected
+        });
+    }
+});
+
 const PORT = 4000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
