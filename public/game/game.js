@@ -519,28 +519,39 @@ export class Game {
 
     gameOver() {
         if (this.isGameOver) return;
-        
         this.isGameOver = true;
         
-        // Bildirim div'i oluştur
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            z-index: 9999;
-            font-family: Arial, sans-serif;
-            max-width: 80%;
-            word-wrap: break-word;
+        // UI elementlerini temizle
+        const healthContainer = document.querySelector('.health-container');
+        if (healthContainer) {
+            healthContainer.remove();
+        }
+
+        const waveStatus = document.getElementById('waveStatus');
+        if (waveStatus) {
+            waveStatus.style.display = 'none';
+        }
+
+        // Game Over ekranı
+        const gameOverScreen = document.createElement('div');
+        gameOverScreen.className = 'game-over-screen';
+        gameOverScreen.innerHTML = `
+            <div class="game-over-content">
+                <h1>Game Over!</h1>
+                <p>Player: ${this.nickname}</p>
+                <p>Wave: ${this.waveManager.currentWave}</p>
+                <p>Final Score: ${this.score}</p>
+                <div id="gameOverLeaderboard">
+                    <h2>High Scores</h2>
+                    <ul id="gameOverScoresList"></ul>
+                </div>
+                <button class="restart-button">Play Again</button>
+                <p id="saveStatus">Skor kaydediliyor...</p>
+            </div>
         `;
-        document.body.appendChild(notification);
-        notification.textContent = `Skor kaydediliyor... (${this.score} puan)`;
         
+        document.body.appendChild(gameOverScreen);
+
         // Skoru MongoDB'ye kaydet
         fetch('/api/score', {
             method: 'POST',
@@ -555,64 +566,44 @@ export class Game {
         .then(response => {
             if (!response.ok) {
                 return response.json().then(err => {
-                    notification.style.background = 'rgba(255, 0, 0, 0.8)';
-                    notification.textContent = `Hata: ${err.details || err.error}`;
+                    document.getElementById('saveStatus').style.color = 'red';
+                    document.getElementById('saveStatus').textContent = `Hata: ${err.details || err.error}`;
                     throw new Error(`Skor kaydetme hatası: ${err.details || err.error}`);
                 });
             }
             return response.json();
         })
         .then(data => {
-            notification.style.background = 'rgba(0, 255, 0, 0.8)';
-            notification.textContent = `Skor başarıyla kaydedildi! (${this.score} puan)`;
+            document.getElementById('saveStatus').style.color = 'green';
+            document.getElementById('saveStatus').textContent = `Skor başarıyla kaydedildi!`;
+            
+            // Leaderboard'u güncelle
+            return fetch('/api/leaderboard');
+        })
+        .then(response => response.json())
+        .then(scores => {
+            const leaderboardList = document.getElementById('gameOverScoresList');
+            leaderboardList.innerHTML = scores
+                .map((score, index) => `
+                    <li class="${score.nickname === this.nickname ? 'current-player' : ''}">
+                        ${index + 1}. ${score.nickname} - ${score.highScore} 
+                        <span class="score-date">
+                            (${new Date(score.lastPlayed).toLocaleDateString()})
+                        </span>
+                    </li>
+                `).join('');
         })
         .catch(error => {
-            notification.style.background = 'rgba(255, 0, 0, 0.8)';
-            notification.textContent = `Hata: ${error.message}`;
+            document.getElementById('saveStatus').style.color = 'red';
+            document.getElementById('saveStatus').textContent = `Hata: ${error.message}`;
         });
-        
-        try {
-            // UI elementlerini temizle
-            const healthContainer = document.querySelector('.health-container');
-            if (healthContainer) {
-                healthContainer.remove();
-            }
 
-            const waveStatus = document.getElementById('waveStatus');
-            if (waveStatus) {
-                waveStatus.style.display = 'none';
-            }
-
-            // Game Over ekranı
-            const gameOverScreen = document.createElement('div');
-            gameOverScreen.className = 'game-over-screen';
-            gameOverScreen.innerHTML = `
-                <div class="game-over-content">
-                    <h1>Game Over!</h1>
-                    <p>Player: ${this.nickname}</p>
-                    <p>Wave: ${this.waveManager.currentWave}</p>
-                    <p>Final Score: ${this.score}</p>
-                    <button class="restart-button">Play Again</button>
-                </div>
-            `;
-            
-            document.body.appendChild(gameOverScreen);
-
-            // Restart butonu - sayfa yenilemeden önce sor
-            const restartButton = gameOverScreen.querySelector('.restart-button');
-            if (restartButton) {
-                restartButton.addEventListener('click', () => {
-                    if (confirm('Sayfadan çıkmak istediğinize emin misiniz? Skor kaydedildiyse yeşil bildirim görmelisiniz.')) {
-                        window.location.reload();
-                    }
-                });
-            }
-
-        } catch (error) {
-            console.error('Game Over error:', error);
-            if (confirm('Bir hata oluştu. Sayfadan çıkmak istediğinize emin misiniz?')) {
+        // Restart butonu
+        const restartButton = gameOverScreen.querySelector('.restart-button');
+        if (restartButton) {
+            restartButton.addEventListener('click', () => {
                 window.location.reload();
-            }
+            });
         }
     }
 }
