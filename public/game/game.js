@@ -522,9 +522,24 @@ export class Game {
         
         this.isGameOver = true;
         
-        // Sınıf metodlarını this ile çağıralım
-        this.saveHighScore();
-        this.updateLeaderboard();
+        // Skoru kaydet
+        const data = {
+            nickname: this.nickname,
+            score: this.score
+        };
+        
+        // Mevcut skorları al
+        let highScores = JSON.parse(localStorage.getItem('highScores') || '[]');
+        
+        // Yeni skoru ekle
+        highScores.push(data);
+        
+        // Skorları sırala ve en yüksek 10 skoru tut
+        highScores.sort((a, b) => b.score - a.score);
+        highScores = highScores.slice(0, 10);
+        
+        // Skorları kaydet
+        localStorage.setItem('highScores', JSON.stringify(highScores));
         
         // Oyunu durdur
         this.enemies = [];
@@ -550,19 +565,6 @@ export class Game {
             // Game Over ekranı
             const gameOverScreen = document.createElement('div');
             gameOverScreen.className = 'game-over-screen';
-            gameOverScreen.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.8);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 9999;
-            `;
-            
             gameOverScreen.innerHTML = `
                 <div class="game-over-content">
                     <h1>Game Over!</h1>
@@ -579,44 +581,13 @@ export class Game {
             const restartButton = gameOverScreen.querySelector('.restart-button');
             if (restartButton) {
                 restartButton.addEventListener('click', () => {
-                    // Sayfayı yeniden yükle
                     window.location.reload();
                 });
             }
 
         } catch (error) {
             console.error('Game Over error:', error);
-            // Hata durumunda en azından sayfayı yenileyelim
             window.location.reload();
-        }
-    }
-
-    // saveHighScore metodunu sınıf içine taşıyalım
-    saveHighScore() {
-        const data = {
-            nickname: this.nickname,
-            score: this.score
-        };
-        
-        localStorage.setItem('lastScore', JSON.stringify(data));
-        
-        let highScores = JSON.parse(localStorage.getItem('highScores') || '[]');
-        highScores.push(data);
-        highScores.sort((a, b) => b.score - a.score);
-        highScores = highScores.slice(0, 10);
-        localStorage.setItem('highScores', JSON.stringify(highScores));
-    }
-
-    // updateLeaderboard metodunu sınıf içine taşıyalım
-    updateLeaderboard() {
-        const highScores = JSON.parse(localStorage.getItem('highScores') || '[]');
-        const leaderboardList = document.getElementById('leaderboardList');
-        
-        if (leaderboardList) {
-            leaderboardList.innerHTML = highScores
-                .map((score, index) => `
-                    <li>${index + 1}. ${score.nickname} - ${score.score}</li>
-                `).join('');
         }
     }
 }
