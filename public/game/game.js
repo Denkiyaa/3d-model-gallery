@@ -546,6 +546,7 @@ export class Game {
     }
 
     gameOver() {
+        console.log('Game Over başladı');
         if (this.isGameOver) return;
         this.isGameOver = true;
         
@@ -556,7 +557,7 @@ export class Game {
         const waveStatus = document.getElementById('waveStatus');
         if (waveStatus) waveStatus.style.display = 'none';
 
-        // Game Over ekranı - resimde gördüğümüz gibi
+        // Game Over ekranı
         const gameOverScreen = document.createElement('div');
         gameOverScreen.className = 'game-over-screen';
         gameOverScreen.innerHTML = `
@@ -565,13 +566,17 @@ export class Game {
                 <p>Player: ${this.nickname}</p>
                 <p>Wave: ${this.waveManager.currentWave}</p>
                 <p>Final Score: ${this.score}</p>
-                <div class="button-container">
-                    <button id="playAgain" class="restart-button">Play Again</button>
-                    <button id="saveScore" class="restart-button">Save Score</button>
-                </div>
+                <button id="playAgain" class="medieval-button">Play Again</button>
+                <button id="saveScore" class="medieval-button">Save Score</button>
             </div>
         `;
         document.body.appendChild(gameOverScreen);
+        console.log('Game Over ekranı eklendi');
+        
+        const playAgainBtn = document.getElementById('playAgain');
+        const saveScoreBtn = document.getElementById('saveScore');
+        
+        console.log('Butonlar:', { playAgain: playAgainBtn, saveScore: saveScoreBtn });
 
         // Play Again butonu
         document.getElementById('playAgain').addEventListener('click', () => {
