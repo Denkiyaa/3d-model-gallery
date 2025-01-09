@@ -519,11 +519,39 @@ export class Game {
         
         this.isGameOver = true;
         
+        // Önce canvas'ı temizle
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Tüm oyun nesnelerini temizle
+        this.enemies = [];
+        this.arrows = [];
+        
+        // Game loop'u durdur
+        cancelAnimationFrame(this.gameLoop);
+        
         // Mevcut oyun elementlerini temizle
         const healthContainer = document.querySelector('.health-container');
         if (healthContainer) {
             healthContainer.remove();
         }
+        
+        // Wave status'u gizle
+        const waveStatus = document.getElementById('waveStatus');
+        if (waveStatus) {
+            waveStatus.style.display = 'none';
+        }
+        
+        // Skoru sunucuya kaydet
+        fetch('/api/score', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                nickname: this.nickname,
+                score: this.score
+            })
+        }).catch(error => console.error('Score kaydetme hatası:', error));
         
         // Game Over ekranını göster
         const gameOverScreen = document.createElement('div');
@@ -533,7 +561,7 @@ export class Game {
                 <h1>Game Over!</h1>
                 <p>Player: ${this.nickname}</p>
                 <p>Wave: ${this.waveManager.currentWave}</p>
-                <p>Score: ${this.score}</p>
+                <p>Final Score: ${this.score}</p>
                 <button class="restart-button">Play Again</button>
             </div>
         `;
@@ -542,10 +570,14 @@ export class Game {
         // Restart butonu için event listener
         const restartButton = gameOverScreen.querySelector('.restart-button');
         restartButton.addEventListener('click', () => {
-            // Oyun ekranını temizle
+            // Tüm oyun elementlerini temizle
             gameOverScreen.remove();
+            const canvas = document.getElementById('gameCanvas');
+            if (canvas) {
+                canvas.remove();
+            }
             // Sayfayı yeniden yükle
-            location.reload();
+            window.location.href = '/game';
         });
     }
 }
