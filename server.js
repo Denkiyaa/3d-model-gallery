@@ -18,27 +18,11 @@ app.use('/models', express.static(path.join(__dirname, 'public/models')));
 
 // Skor şeması
 const ScoreSchema = new mongoose.Schema({
-    nickname: { 
-        type: String, 
-        required: true,
-        trim: true
-    },
-    score: { 
-        type: Number, 
-        required: true,
-        min: 0
-    },
-    date: { 
-        type: Date, 
-        default: Date.now 
-    }
-}, { 
-    collection: 'scores',
-    timestamps: true
-});
+    nickname: { type: String, required: true },
+    highScore: { type: Number, required: true },
+    lastPlayed: { type: Date, default: Date.now }
+}, { collection: 'scores' });
 
-// Skor modelini oluşturmadan önce index ekle
-ScoreSchema.index({ score: -1 });
 const Score = mongoose.model('Score', ScoreSchema);
 
 // MongoDB bağlantısı
@@ -46,18 +30,21 @@ const MONGODB_URI = 'mongodb://denkiya:1327@vmi2186126.contaboserver.net:27017/g
 
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
+    authSource: 'gamedb',
+    user: 'denkiya',
+    pass: '1327',
+    dbName: 'gamedb'
 })
 .then(async () => {
     console.log('MongoDB bağlantısı başarılı');
     
-    // Test bağlantısı
-    const testConnection = await mongoose.connection.db.command({ ping: 1 });
-    console.log('Veritabanı ping testi:', testConnection);
-    
-    // Koleksiyonları listele
+    // Koleksiyon kontrolü
     const collections = await mongoose.connection.db.listCollections().toArray();
-    console.log('Mevcut koleksiyonlar:', collections.map(c => c.name));
+    if (!collections.some(c => c.name === 'scores')) {
+        await mongoose.connection.db.createCollection('scores');
+        console.log('scores koleksiyonu oluşturuldu');
+    }
 })
 .catch((err) => {
     console.error('MongoDB bağlantı hatası:', err);
@@ -103,82 +90,51 @@ app.post('/api/login', async (req, res) => {
 
 app.post('/api/score', async (req, res) => {
     try {
-        // Bağlantı durumu kontrolü
-        if (mongoose.connection.readyState !== 1) {
-            console.error('Veritabanı bağlantı durumu:', mongoose.connection.readyState);
-            throw new Error('Veritabanı bağlantısı aktif değil');
-        }
-
-        console.log('Skor kaydetme isteği alındı:', req.body);
+        console.log('Skor kaydetme isteği:', req.body);
         const { nickname, score } = req.body;
+
+        // Mevcut oyuncuyu bul veya yeni oluştur
+        let player = await Score.findOne({ nickname });
         
-        if (!nickname || !score) {
-            throw new Error(`Eksik veri: nickname=${nickname}, score=${score}`);
+        if (!player) {
+            // Yeni oyuncu
+            player = new Score({
+                nickname,
+                highScore: score,
+                lastPlayed: new Date()
+            });
+        } else if (score > player.highScore) {
+            // Yüksek skor güncelleme
+            player.highScore = score;
+            player.lastPlayed = new Date();
         }
 
-        // Koleksiyon kontrolü
-        const collections = await mongoose.connection.db.listCollections().toArray();
-        console.log('Mevcut koleksiyonlar:', collections.map(c => c.name));
-
-        // Yeni skor dokümanı oluştur
-        const newScore = new Score({
-            nickname: nickname,
-            score: score,
-            date: new Date()
-        });
-
-        console.log('Kaydedilecek skor:', newScore);
-
-        // Kaydet ve sonucu bekle
-        const savedScore = await newScore.save();
-        console.log('Skor başarıyla kaydedildi:', savedScore);
-
-        // Doğrulama için tekrar oku
-        const verifyScore = await Score.findById(savedScore._id);
-        console.log('Kaydedilen skor doğrulandı:', verifyScore);
+        // Kaydet
+        await player.save();
+        console.log('Skor kaydedildi:', player);
 
         res.json({ 
             success: true, 
-            score: savedScore,
-            message: 'Skor başarıyla kaydedildi'
+            score: player 
         });
     } catch (error) {
-        console.error('Skor kaydetme hatası:', {
-            error: error.message,
-            stack: error.stack,
-            mongoState: mongoose.connection.readyState,
-            body: req.body
-        });
-
+        console.error('Skor kaydetme hatası:', error);
         res.status(500).json({ 
-            error: 'Skor kaydedilemedi', 
-            details: error.message,
-            mongoState: mongoose.connection.readyState
+            error: 'Skor kaydedilemedi',
+            details: error.message
         });
     }
 });
 
 app.get('/api/leaderboard', async (req, res) => {
     try {
-        // Bağlantı durumunu kontrol et
-        if (mongoose.connection.readyState !== 1) {
-            throw new Error(`Veritabanı bağlantısı aktif değil (${mongoose.connection.readyState})`);
-        }
-
-        // Tüm skorları getir
         const scores = await Score.find()
-            .sort({ score: -1 })
+            .sort({ highScore: -1 })
             .limit(10)
-            .select('nickname score date -_id')
+            .select('nickname highScore lastPlayed -_id')
             .exec();
         
         console.log('Bulunan skorlar:', scores);
-
-        // Boş array kontrolü
-        if (!scores || scores.length === 0) {
-            return res.json([]);
-        }
-
         res.json(scores);
     } catch (error) {
         console.error('Leaderboard hatası:', error);
