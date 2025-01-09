@@ -424,3 +424,34 @@ span {
 .leaderboard-close:hover {
     transform: scale(1.2);
 }
+
+#adminPanel label {
+    display: block;
+    margin: 10px 0 5px;
+}
+
+#adminPanel input {
+    width: 100%;
+    padding: 5px;
+    margin-bottom: 10px;
+}
+
+#adminPanel span {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #ccc;
+}
+
+#adminPanel button {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#adminPanel button:hover {
+    background: #45a049;
+}

@@ -33,6 +33,9 @@ export class Game {
         
         this.createHealthBar();
         
+        // Oyun nesnesini global olarak erişilebilir yap
+        window.game = this;
+        
         // Game loop'u başlat
         this.gameLoop();
     }
