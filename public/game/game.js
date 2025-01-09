@@ -515,70 +515,73 @@ export class Game {
     }
 
     gameOver() {
-        if (this.isGameOver) return; // Eğer zaten game over olduysa tekrar çalıştırma
+        if (this.isGameOver) return;
         
         this.isGameOver = true;
         
-        // Önce canvas'ı temizle
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // Tüm oyun nesnelerini temizle
+        // Oyunu durdur
         this.enemies = [];
         this.arrows = [];
         
-        // Game loop'u durdur
-        cancelAnimationFrame(this.gameLoop);
-        
-        // Mevcut oyun elementlerini temizle
-        const healthContainer = document.querySelector('.health-container');
-        if (healthContainer) {
-            healthContainer.remove();
+        // Canvas'ı temizle
+        if (this.ctx && this.canvas) {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         }
         
-        // Wave status'u gizle
-        const waveStatus = document.getElementById('waveStatus');
-        if (waveStatus) {
-            waveStatus.style.display = 'none';
-        }
-        
-        // Skoru sunucuya kaydet
-        fetch('/api/score', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                nickname: this.nickname,
-                score: this.score
-            })
-        }).catch(error => console.error('Score kaydetme hatası:', error));
-        
-        // Game Over ekranını göster
-        const gameOverScreen = document.createElement('div');
-        gameOverScreen.className = 'game-over-screen';
-        gameOverScreen.innerHTML = `
-            <div class="game-over-content">
-                <h1>Game Over!</h1>
-                <p>Player: ${this.nickname}</p>
-                <p>Wave: ${this.waveManager.currentWave}</p>
-                <p>Final Score: ${this.score}</p>
-                <button class="restart-button">Play Again</button>
-            </div>
-        `;
-        document.body.appendChild(gameOverScreen);
-
-        // Restart butonu için event listener
-        const restartButton = gameOverScreen.querySelector('.restart-button');
-        restartButton.addEventListener('click', () => {
-            // Tüm oyun elementlerini temizle
-            gameOverScreen.remove();
-            const canvas = document.getElementById('gameCanvas');
-            if (canvas) {
-                canvas.remove();
+        try {
+            // UI elementlerini temizle
+            const healthContainer = document.querySelector('.health-container');
+            if (healthContainer) {
+                healthContainer.remove();
             }
-            // Sayfayı yeniden yükle
-            window.location.href = '/game';
-        });
+
+            const waveStatus = document.getElementById('waveStatus');
+            if (waveStatus) {
+                waveStatus.style.display = 'none';
+            }
+
+            // Game Over ekranı
+            const gameOverScreen = document.createElement('div');
+            gameOverScreen.className = 'game-over-screen';
+            gameOverScreen.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+            `;
+            
+            gameOverScreen.innerHTML = `
+                <div class="game-over-content">
+                    <h1>Game Over!</h1>
+                    <p>Player: ${this.nickname}</p>
+                    <p>Wave: ${this.waveManager.currentWave}</p>
+                    <p>Final Score: ${this.score}</p>
+                    <button class="restart-button">Play Again</button>
+                </div>
+            `;
+            
+            document.body.appendChild(gameOverScreen);
+
+            // Restart butonu
+            const restartButton = gameOverScreen.querySelector('.restart-button');
+            if (restartButton) {
+                restartButton.addEventListener('click', () => {
+                    // Sayfayı yeniden yükle
+                    window.location.reload();
+                });
+            }
+
+        } catch (error) {
+            console.error('Game Over error:', error);
+            // Hata durumunda en azından sayfayı yenileyelim
+            window.location.reload();
+        }
     }
 }
 
