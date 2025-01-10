@@ -27,7 +27,7 @@ export const GAME_CONFIG = {
         HEIGHT: 40,
         BASE_HEALTH: 90,
         BASE_DAMAGE: 8,
-        BASE_SPEED: 0.8,
+        BASE_SPEED: 0.4,
         HEALTH_INCREMENT: 15,
         SPEED_INCREMENT: 0.08,
         BOSS_HEALTH_MULTIPLIER: 2.5,
