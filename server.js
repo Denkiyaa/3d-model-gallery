@@ -10,6 +10,7 @@ app.use(cors({
     origin: [
         'http://localhost:3000',
         'http://localhost:4000',
+        'http://localhost:5000',
         'https://craftedfromfilament.com'
     ],
     credentials: true,
@@ -17,10 +18,6 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'build')));
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/game', express.static(path.join(__dirname, 'public/game')));
-app.use('/models', express.static(path.join(__dirname, 'public/models')));
 
 // Skor şeması
 const ScoreSchema = new mongoose.Schema({
@@ -91,7 +88,38 @@ app.use((req, res, next) => {
     next();
 });
 
+// API route'larını ortada tut
+app.use('/api/*', (req, res, next) => {
+    if (!isConnected) {
+        return res.status(500).json({ 
+            error: 'Veritabanı bağlantısı aktif değil',
+            details: 'MongoDB bağlantısı kurulamadı'
+        });
+    }
+    next();
+});
+
 // API route'ları MongoDB ile güncellenmiş hali
+app.get('/api/leaderboard', async (req, res) => {
+    console.log('Leaderboard isteği alındı');
+    try {
+        const scores = await Score.find()
+            .sort({ highScore: -1 })
+            .limit(10)
+            .select('nickname highScore lastPlayed -_id')
+            .lean();
+
+        console.log('Skorlar bulundu:', scores);
+        res.json(scores);
+    } catch (error) {
+        console.error('Leaderboard hatası:', error);
+        res.status(500).json({ 
+            error: 'Leaderboard alınamadı',
+            details: error.message 
+        });
+    }
+});
+
 app.post('/api/login', async (req, res) => {
     console.log('Login isteği geldi:', req.body);
     const { nickname } = req.body;
@@ -158,59 +186,22 @@ app.post('/api/score', async (req, res) => {
     }
 });
 
-app.get('/api/leaderboard', async (req, res) => {
-    try {
-        // Bağlantı kontrolü
-        if (!isConnected) {
-            throw new Error('Veritabanı bağlantısı aktif değil');
-        }
+// 3. Statik dosyalar
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/game', express.static(path.join(__dirname, 'public/game')));
+app.use('/models', express.static(path.join(__dirname, 'public/models')));
 
-        // Veritabanı sorgusunu try-catch içine al
-        let scores;
-        try {
-            scores = await Score.find()
-                .sort({ highScore: -1 })
-                .limit(10)
-                .select('nickname highScore lastPlayed -_id')
-                .lean()
-                .exec();
-        } catch (dbError) {
-            console.error('Veritabanı sorgu hatası:', dbError);
-            throw new Error('Veritabanı sorgusu başarısız');
-        }
-
-        // Sonuçları kontrol et
-        if (!scores) {
-            return res.json([]);
-        }
-
-        console.log('Bulunan skorlar:', scores);
-        res.json(scores);
-    } catch (error) {
-        console.error('Leaderboard hatası:', {
-            message: error.message,
-            stack: error.stack,
-            mongoState: mongoose.connection.readyState
-        });
-        
-        res.status(500).json({ 
-            error: 'Leaderboard alınamadı',
-            details: error.message,
-            connected: isConnected
-        });
-    }
-});
-
-// Oyun route'u
+// 4. Oyun route'u
 app.get('/game/*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/game/index.html'));
 });
 
-// React uygulaması için route'lar
-app.get('/*', (req, res) => {
-    if (!req.path.startsWith('/game') && !req.path.startsWith('/api')) {
-        res.sendFile(path.join(__dirname, 'public/index.html'));
+// 5. Catch-all route
+app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'API endpoint bulunamadı' });
     }
+    res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
 // Test fonksiyonu ekle
