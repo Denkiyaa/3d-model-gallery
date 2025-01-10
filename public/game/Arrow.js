@@ -11,6 +11,10 @@ export class Arrow {
         this.critical = critical;
         this.isActive = true;
 
+        // Hedefin son konumunu kaydet
+        this.targetFinalX = target.x + target.width / 2;
+        this.targetFinalY = target.y + target.height / 2;
+
         // Hedefin merkez noktasını hesapla
         const targetCenterX = target.x + target.width / 2;
         const targetCenterY = target.y + target.height / 2;
@@ -47,18 +51,38 @@ export class Arrow {
         this.angle = aimAngle;
     }
 
+    continueForward() {
+        // Hedef öldüğünde son konumunu güncelle
+        if (this.target) {
+            this.targetFinalX = this.target.x + this.target.width / 2;
+            this.targetFinalY = this.target.y + this.target.height / 2;
+        }
+        this.target = null;
+    }
+
     update() {
         if (!this.isActive) return;
 
-        // Sabit yönde hareket et
-        this.x += this.velocityX;
-        this.y += this.velocityY;
+        // Okun yeni konumunu hesapla
+        const nextX = this.x + this.velocityX;
+        const nextY = this.y + this.velocityY;
 
-        // Ekran dışına çıktıysa deaktive et
-        if (this.x < 0 || this.x > window.innerWidth || 
-            this.y < 0 || this.y > window.innerHeight) {
-            this.isActive = false;
+        if (this.target === null) {
+            // Hedef yoksa, son konuma yaklaştık mı kontrol et
+            const dx = this.targetFinalX - this.x;
+            const dy = this.targetFinalY - this.y;
+            const distanceToTarget = Math.sqrt(dx * dx + dy * dy);
+
+            if (distanceToTarget < this.speed) {
+                // Hedefe ulaştık, oku deaktive et
+                this.isActive = false;
+                return;
+            }
         }
+
+        // Oku hareket ettir
+        this.x = nextX;
+        this.y = nextY;
     }
 
     draw(ctx) {

@@ -137,7 +137,6 @@ export class Game {
         // Update arrows and check collisions
         for (let i = this.arrows.length - 1; i >= 0; i--) {
             const arrow = this.arrows[i];
-            arrow.update();
             
             // Ok ekrandan çıktı mı?
             if (arrow.x > this.canvas.width || arrow.x < 0 || 
@@ -146,19 +145,22 @@ export class Game {
                 continue;
             }
             
-            // Hedef düşman ölmüş mü?
-            if (!this.enemies.includes(arrow.target)) {
+            // Ok aktif değilse kaldır
+            if (!arrow.isActive) {
                 this.arrows.splice(i, 1);
                 continue;
             }
+
+            arrow.update();
             
-            // Ok aktif değilse veya hedef ölmüşse devam et
-            if (!arrow.isActive || arrow.target.health <= 0) {
+            // Hedef düşman ölmüşse veya artık oyunda değilse
+            if (arrow.target && !this.enemies.includes(arrow.target)) {
+                arrow.continueForward();
                 continue;
             }
             
             // Ok düşmana çarptı mı?
-            if (this.checkCollision(arrow, arrow.target)) {
+            if (arrow.target && this.checkCollision(arrow, arrow.target)) {
                 const isCritical = Math.random() < this.player.criticalChance;
                 const damage = isCritical ? this.player.damage * 2 : this.player.damage;
                 
@@ -171,8 +173,7 @@ export class Game {
                 ));
                 
                 arrow.target.health -= damage;
-                arrow.isActive = false;  // Oku deaktive et
-                this.arrows.splice(i, 1);  // Oku kaldır
+                arrow.isActive = false;
                 
                 // Düşman öldü mü kontrol et
                 if (arrow.target.health <= 0) {
