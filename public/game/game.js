@@ -7,8 +7,16 @@ export class Game {
     constructor(nickname) {
         this.nickname = nickname;
         
+        // Sunucudaki API'ye istek yap
+        const API_URL = 'https://craftedfromfilament.com/api/login';
+        
+        console.log('Oyuncu kaydı yapılıyor:', {
+            url: API_URL,
+            nickname: this.nickname
+        });
+        
         // Önce oyuncuyu kaydet
-        fetch('/api/login', {
+        fetch(API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -575,7 +583,33 @@ export class Game {
 
         // Butonlara tıklama olayları
         document.getElementById('saveScore').addEventListener('click', () => {
-            // ... skor kaydetme kodu ...
+            const API_URL = 'https://craftedfromfilament.com/api/score';
+            
+            console.log('Skor kaydediliyor:', {
+                url: API_URL,
+                nickname: this.nickname,
+                score: this.score
+            });
+            
+            fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    nickname: this.nickname,
+                    score: this.score
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Skor kaydedildi:', data);
+                // ... diğer kodlar
+            })
+            .catch(error => {
+                console.error('Skor kaydetme hatası:', error);
+                // ... hata işleme
+            });
         });
 
         document.getElementById('playAgain').addEventListener('click', () => {
