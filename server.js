@@ -45,28 +45,13 @@ mongoose.connect(MONGODB_URI, {
     serverSelectionTimeoutMS: 5000,
     connectTimeoutMS: 10000,
     socketTimeoutMS: 45000,
-    family: 4,
-    retryWrites: true,
-    w: 'majority'
+    family: 4
 }).then(() => {
-    isConnected = true;  // Bağlantı başarılı olduğunda true yap
+    isConnected = true;
     console.log('MongoDB bağlantısı başarılı');
-    
-    // Test bağlantısı
-    return Score.findOne().exec();
-}).then((testResult) => {
-    console.log('Test sorgusu sonucu:', testResult ? 'Veri bulundu' : 'Veri bulunamadı');
 }).catch((err) => {
-    isConnected = false;  // Hata durumunda false yap
-    console.error('MongoDB bağlantı hatası detayları:', {
-        message: err.message,
-        code: err.code,
-        name: err.name,
-        errno: err.errno,
-        syscall: err.syscall,
-        hostname: err.hostname,
-        state: mongoose.connection.readyState
-    });
+    isConnected = false;
+    console.error('MongoDB bağlantı hatası:', err);
 });
 
 // Bağlantı durumunu izle
@@ -293,6 +278,28 @@ app.post('/api/test-write', async (req, res) => {
             details: error.message,
             connected: isConnected
         });
+    }
+});
+
+// Bağlantı durumunu kontrol eden middleware
+app.use('/api', (req, res, next) => {
+    if (!isConnected) {
+        // Bağlantı kopuksa yeniden bağlanmayı dene
+        mongoose.connect(MONGODB_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        }).then(() => {
+            isConnected = true;
+            next();
+        }).catch(err => {
+            console.error('Yeniden bağlantı hatası:', err);
+            res.status(500).json({ 
+                error: 'Veritabanı bağlantısı kurulamadı',
+                details: err.message 
+            });
+        });
+    } else {
+        next();
     }
 });
 
