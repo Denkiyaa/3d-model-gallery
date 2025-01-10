@@ -14,9 +14,10 @@ export const GAME_CONFIG = {
         WIDTH: 40,
         HEIGHT: 60,
         X: 100,
-        INITIAL_DAMAGE: 25,
-        INITIAL_ATTACK_SPEED: 1000,
-        INITIAL_CRIT_CHANCE: 0.10,
+        INITIAL_DAMAGE: 18,
+        INITIAL_ATTACK_SPEED: 1300,
+        INITIAL_CRIT_CHANCE: 0.08,
+        INITIAL_CRIT_DAMAGE: 1.5,
         INITIAL_MULTI_SHOT: 1,
         INITIAL_ARROWS: 1
     },
@@ -25,57 +26,63 @@ export const GAME_CONFIG = {
     ENEMY: {
         WIDTH: 40,
         HEIGHT: 40,
-        BASE_HEALTH: 90,
-        BASE_DAMAGE: 8,
-        BASE_SPEED: 0.8,
-        HEALTH_INCREMENT: 15,
-        SPEED_INCREMENT: 0.08,
-        BOSS_HEALTH_MULTIPLIER: 2.5,
-        BOSS_SPEED_MULTIPLIER: 0.1
+        BASE_HEALTH: 65,
+        BASE_DAMAGE: 10,
+        BASE_SPEED: 0.65,
+        HEALTH_INCREMENT: 6,
+        SPEED_INCREMENT: 0.03,
+        BOSS_HEALTH_MULTIPLIER: 3.0,
+        BOSS_SPEED_MULTIPLIER: 0.4
     },
     
     // Wave ayarları
     WAVE: {
-        INITIAL_ENEMIES: 3,        // İlk wave'deki düşman sayısı
-        ENEMIES_INCREMENT: 1,      // Her wave'de eklenecek düşman sayısı
-        BOSS_EVERY_N_WAVES: 5,     // Kaç wave'de bir boss gelecek
-        SPAWN_INTERVAL: 2500,      // Düşmanlar arası süre (ms)
-        SPAWN_INTERVAL_DECREASE: 40 // Her wave'de azalacak spawn süresi
+        INITIAL_ENEMIES: 2,
+        ENEMIES_INCREMENT: 1,
+        BOSS_EVERY_N_WAVES: 5,
+        SPAWN_INTERVAL: 2800,
+        SPAWN_INTERVAL_DECREASE: 30
     },
 
     // Kart sistemi
     CARDS: {
-        OPTIONS_PER_WAVE: 3,       // Her wave sonrası sunulan kart sayısı
+        OPTIONS_PER_WAVE: 3,
         RARITY_CHANCES: {
-            COMMON: 0.65,          // %65
-            RARE: 0.25,           // %25
-            EPIC: 0.08,           // %8
-            LEGENDARY: 0.02       // %2
+            COMMON: 0.60,
+            RARE: 0.25,
+            EPIC: 0.12,
+            LEGENDARY: 0.03
         },
         UPGRADES: {
             DAMAGE: {
-                COMMON: 1.15,      // %15 artış
-                RARE: 1.30,        // %30 artış
-                EPIC: 1.45,        // %45 artış
-                LEGENDARY: 1.70    // %70 artış
+                COMMON: 1.08,
+                RARE: 1.15,
+                EPIC: 1.25,
+                LEGENDARY: 1.40
             },
             ATTACK_SPEED: {
-                COMMON: 0.95,     // %5 hızlanma
-                RARE: 0.90,      // %10 hızlanma
-                EPIC: 0.85,      // %15 hızlanma
-                LEGENDARY: 0.80   // %20 hızlanma
+                COMMON: 0.98,
+                RARE: 0.95,
+                EPIC: 0.92,
+                LEGENDARY: 0.88
             },
             CRIT_CHANCE: {
-                COMMON: 0.05,     // +%5
-                RARE: 0.08,       // +%8
-                EPIC: 0.12,       // +%12
-                LEGENDARY: 0.18    // +%18
+                COMMON: 0.02,
+                RARE: 0.04,
+                EPIC: 0.06,
+                LEGENDARY: 0.10
+            },
+            CRIT_DAMAGE: {
+                COMMON: 0.05,
+                RARE: 0.10,
+                EPIC: 0.15,
+                LEGENDARY: 0.20
             },
             MULTI_SHOT: {
-                COMMON: 1,        // +1 ok
-                RARE: 1,          // +1 ok
-                EPIC: 1,          // +1 ok
-                LEGENDARY: 2      // +2 ok
+                COMMON: 1,
+                RARE: 1,
+                EPIC: 1,
+                LEGENDARY: 2
             }
         }
     }

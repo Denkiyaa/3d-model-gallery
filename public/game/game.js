@@ -162,7 +162,9 @@ export class Game {
             // Ok düşmana çarptı mı?
             if (arrow.target && this.checkCollision(arrow, arrow.target)) {
                 const isCritical = Math.random() < this.player.criticalChance;
-                const damage = isCritical ? this.player.damage * 2 : this.player.damage;
+                const baseDamage = this.player.damage;
+                const critMultiplier = this.player.criticalDamage || GAME_CONFIG.PLAYER.INITIAL_CRIT_DAMAGE;
+                const damage = isCritical ? baseDamage * critMultiplier : baseDamage;
                 
                 // Hasar yazısı ekle
                 this.damageTexts.push(new DamageText(

@@ -10,6 +10,7 @@ export class CardSystem {
             attackSpeed: '⚡',
             multiShot: '🏹',
             critical: '✨',
+            critDamage: '💥',    // Yeni simge
             arrowSpeed: '💨'  // Ok hızı için simge
         };
         
@@ -18,25 +19,37 @@ export class CardSystem {
             damage: [
                 { name: 'Sharp Arrows', bonus: 1, description: 'Damage +1', rarity: 'common' },
                 { name: 'Reinforced Arrows', bonus: 2, description: 'Damage +2', rarity: 'rare' },
-                { name: 'Penetrating Arrows', bonus: 3, description: 'Damage +3', rarity: 'epic' }
+                { name: 'Penetrating Arrows', bonus: 3, description: 'Damage +3', rarity: 'epic' },
+                { name: 'Dragon Slayer Arrows', bonus: 5, description: 'Damage +5', rarity: 'legendary' }
             ],
             attackSpeed: [
                 { name: 'Quick Draw', bonus: 0.97, description: 'Attack Speed +3%', rarity: 'common' },
                 { name: 'Swift Shot', bonus: 0.95, description: 'Attack Speed +5%', rarity: 'rare' },
-                { name: 'Lightning Strike', bonus: 0.92, description: 'Attack Speed +8%', rarity: 'epic' }
+                { name: 'Lightning Strike', bonus: 0.92, description: 'Attack Speed +8%', rarity: 'epic' },
+                { name: 'Time Bender', bonus: 0.88, description: 'Attack Speed +12%', rarity: 'legendary' }
             ],
             multiShot: [
-                { name: 'Double Shot', bonus: 1, description: 'Arrows +1', rarity: 'rare' }
+                { name: 'Double Shot', bonus: 1, description: 'Arrows +1', rarity: 'rare' },
+                { name: 'Triple Shot', bonus: 2, description: 'Arrows +2', rarity: 'epic' },
+                { name: 'Arrow Storm', bonus: 3, description: 'Arrows +3', rarity: 'legendary' }
             ],
             critical: [
-                { name: 'Precision Strike', bonus: 0.05, description: 'Critical Chance +5%', rarity: 'common' },
-                { name: 'Deadly Aim', bonus: 0.08, description: 'Critical Chance +8%', rarity: 'rare' },
-                { name: 'Master Marksman', bonus: 0.12, description: 'Critical Chance +12%', rarity: 'epic' }
+                { name: 'Precision Strike', bonus: 0.03, description: 'Critical Chance +3%', rarity: 'common' },
+                { name: 'Deadly Aim', bonus: 0.05, description: 'Critical Chance +5%', rarity: 'rare' },
+                { name: 'Master Marksman', bonus: 0.08, description: 'Critical Chance +8%', rarity: 'epic' },
+                { name: 'Eagle Eye', bonus: 0.12, description: 'Critical Chance +12%', rarity: 'legendary' }
             ],
             arrowSpeed: [
                 { name: 'Swift Arrows', bonus: 0.95, description: 'Arrow Speed +5%', rarity: 'common' },
                 { name: 'Rapid Arrows', bonus: 0.90, description: 'Arrow Speed +10%', rarity: 'rare' },
-                { name: 'Sonic Arrows', bonus: 0.85, description: 'Arrow Speed +15%', rarity: 'epic' }
+                { name: 'Sonic Arrows', bonus: 0.85, description: 'Arrow Speed +15%', rarity: 'epic' },
+                { name: 'Light Speed Arrows', bonus: 0.80, description: 'Arrow Speed +20%', rarity: 'legendary' }
+            ],
+            critDamage: [
+                { name: 'Deadly Strike', bonus: 0.05, description: 'Critical Damage +5%', rarity: 'common' },
+                { name: 'Lethal Force', bonus: 0.10, description: 'Critical Damage +10%', rarity: 'rare' },
+                { name: 'Devastating Blow', bonus: 0.15, description: 'Critical Damage +15%', rarity: 'epic' },
+                { name: 'Ultimate Impact', bonus: 0.20, description: 'Critical Damage +20%', rarity: 'legendary' }
             ]
         };
     }
@@ -131,6 +144,9 @@ export class CardSystem {
                 break;
             case 'arrowSpeed':
                 this.game.player.arrowSpeed = Math.max(5, this.game.player.arrowSpeed * card.bonus);
+                break;
+            case 'critDamage':
+                this.game.player.criticalDamage = (this.game.player.criticalDamage || 1.5) + card.bonus;
                 break;
         }
 
