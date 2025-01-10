@@ -34,10 +34,7 @@ const Score = mongoose.model('Score', ScoreSchema);
 // MongoDB bağlantısı
 const MONGODB_URI = 'mongodb://denkiya:1327@craftedfromfilament.com:27017/gamedb?authSource=gamedb';
 
-console.log('Connecting to MongoDB:', MONGODB_URI);
-
-// Bağlantı durumunu global olarak takip et
-let isConnected = false;
+console.log('MongoDB bağlantı denemesi başlıyor...');
 
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
@@ -45,29 +42,53 @@ mongoose.connect(MONGODB_URI, {
     serverSelectionTimeoutMS: 5000,
     connectTimeoutMS: 10000,
     socketTimeoutMS: 45000,
-    family: 4
+    family: 4,
+    retryWrites: true,
+    w: 'majority'
 }).then(() => {
     isConnected = true;
     console.log('MongoDB bağlantısı başarılı');
+    
+    // Test bağlantısı
+    return Score.findOne().exec();
+}).then((testResult) => {
+    console.log('Test sorgusu sonucu:', testResult ? 'Veri bulundu' : 'Veri bulunamadı');
 }).catch((err) => {
     isConnected = false;
-    console.error('MongoDB bağlantı detaylı hata:', {
+    console.error('MongoDB bağlantı hatası detayları:', {
         message: err.message,
         code: err.code,
         name: err.name,
-        stack: err.stack
+        errno: err.errno,
+        syscall: err.syscall,
+        hostname: err.hostname,
+        state: mongoose.connection.readyState
     });
 });
 
 // Bağlantı durumunu izle
-mongoose.connection.on('error', (err) => {
-    isConnected = false;
-    console.error('MongoDB bağlantı hatası:', err);
+mongoose.connection.on('connecting', () => {
+    console.log('MongoDB bağlantı kuruluyor...');
+});
+
+mongoose.connection.on('connected', () => {
+    console.log('MongoDB bağlandı');
+});
+
+mongoose.connection.on('disconnecting', () => {
+    console.log('MongoDB bağlantısı kesiliyor...');
 });
 
 mongoose.connection.on('disconnected', () => {
-    isConnected = false;
-    console.error('MongoDB bağlantısı kesildi');
+    console.log('MongoDB bağlantısı kesildi');
+});
+
+mongoose.connection.on('error', (err) => {
+    console.error('MongoDB bağlantı hatası:', {
+        message: err.message,
+        code: err.code,
+        name: err.name
+    });
 });
 
 // Önce spesifik route'ları tanımlayalım
