@@ -1,10 +1,10 @@
-import { ENEMY_CONFIG, GAME_CONFIG } from './config.js';
+import { GAME_CONFIG } from './config.js';
 
 export class Enemy {
     constructor(canvas, wave) {
-        this.baseWidth = ENEMY_CONFIG.WIDTH;
-        this.baseHeight = ENEMY_CONFIG.HEIGHT;
-        this.x = canvas.width - this.baseWidth;
+        this.width = GAME_CONFIG.ENEMY.WIDTH;
+        this.height = GAME_CONFIG.ENEMY.HEIGHT;
+        this.x = canvas.width - this.width;
         this.y = Math.random() * (canvas.height - 140) + 50;
         
         // Boss wave kontrolü
@@ -12,29 +12,25 @@ export class Enemy {
         
         if (this.isBoss) {
             // Boss özellikleri
-            this.width = this.baseWidth * 3;      // 3 kat daha büyük
-            this.height = this.baseHeight * 3;
-            this.health = ENEMY_CONFIG.BASE_HEALTH * 15;  // 15 kat daha fazla can
+            this.width *= 3;
+            this.height *= 3;
+            this.health = GAME_CONFIG.ENEMY.BASE_HEALTH * 15;
             this.speedX = Math.max(-18, -GAME_CONFIG.BOSS_SPEED);
-            this.damage = ENEMY_CONFIG.BASE_DAMAGE * 3;
-            this.amplitude = 2;    // Daha az sallanma
-            this.frequency = 0.005; // Daha yavaş sallanma
+            this.damage = GAME_CONFIG.ENEMY.BASE_DAMAGE * 3;
+            this.amplitude = 2;
+            this.frequency = 0.005;
         } else {
-            // Normal düşman özellikleri
             const sizeMultiplier = 1 + (wave * 0.1);
-            this.width = this.baseWidth * sizeMultiplier;
-            this.height = this.baseHeight * sizeMultiplier;
-            this.health = ENEMY_CONFIG.BASE_HEALTH * sizeMultiplier;
-            this.speedX = Math.max(-18, -ENEMY_CONFIG.BASE_SPEED);
-            this.damage = ENEMY_CONFIG.BASE_DAMAGE * sizeMultiplier;
+            this.health = GAME_CONFIG.ENEMY.BASE_HEALTH * sizeMultiplier;
+            this.speedX = Math.max(-18, -GAME_CONFIG.ENEMY.BASE_SPEED);
+            this.damage = GAME_CONFIG.ENEMY.BASE_DAMAGE * sizeMultiplier;
             this.amplitude = Math.random() * 4 + 2;
             this.frequency = Math.random() * 0.02 + 0.01;
         }
-
+        
         this.maxHealth = this.health;
         this.time = Math.random() * Math.PI * 2;
         this.initialY = this.y;
-        this.isElite = false;
     }
 
     draw(ctx) {

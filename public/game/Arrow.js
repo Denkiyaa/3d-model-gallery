@@ -1,13 +1,14 @@
 import { GAME_CONFIG } from './config.js';
 
 export class Arrow {
-    constructor(x, y, target) {
+    constructor(x, y, target, speed, critical) {
         this.x = x;
         this.y = y;
         this.target = target;
         this.width = 10;
         this.height = 4;
-        this.speed = GAME_CONFIG.ARROW_SPEED;
+        this.speed = speed || GAME_CONFIG.ARROW_SPEED;
+        this.critical = critical;
         this.isActive = true;
 
         // Hedefin merkez noktasını hesapla
@@ -18,22 +19,32 @@ export class Arrow {
         const dx = targetCenterX - x;
         const dy = targetCenterY - y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        const relativeSpeed = Math.abs(target.speedX) / this.speed;
-        const adjustedSpeed = this.speed + (relativeSpeed * this.speed);
-        const timeToHit = distance / adjustedSpeed;
 
-        // Düşmanın tahmin edilen konumu
-        const futureX = targetCenterX + (target.speedX * timeToHit);
-        const futureY = targetCenterY + (Math.cos(target.time) * target.amplitude * target.frequency * timeToHit);
+        // Düşmanın hızını hesaba kat
+        // Yatay hız bileşeni
+        const horizontalSpeed = Math.abs(target.speedX);
+        // Dikey hız bileşeni (sallanma hareketi)
+        const verticalSpeed = target.amplitude * target.frequency;
 
-        // Açıyı hesapla
-        let angle = Math.atan2(futureY - y, futureX - x);
-        angle = Math.max(-Math.PI/2, Math.min(Math.PI/2, angle));
+        // Toplam hız vektörü
+        const totalSpeed = Math.sqrt(horizontalSpeed * horizontalSpeed + verticalSpeed * verticalSpeed);
+        
+        // Hedefin hareket yönünü tahmin et
+        const timeToHit = distance / (this.speed + totalSpeed);
+        
+        // Hedefin tahmin edilen konumu
+        const predictedX = targetCenterX + (target.speedX * timeToHit);
+        const predictedY = targetCenterY + (Math.sin(target.time + timeToHit * target.frequency) * target.amplitude);
 
-        // Hız vektörlerini hesapla
-        this.velocityX = Math.cos(angle) * this.speed;
-        this.velocityY = Math.sin(angle) * this.speed;
-        this.angle = angle;
+        // Hedefleme açısını hesapla
+        const aimAngle = Math.atan2(predictedY - y, predictedX - x);
+
+        // Okun hız bileşenlerini hesapla
+        this.velocityX = Math.cos(aimAngle) * this.speed;
+        this.velocityY = Math.sin(aimAngle) * this.speed;
+        
+        // Okun görsel açısı
+        this.angle = aimAngle;
     }
 
     update() {
@@ -53,14 +64,20 @@ export class Arrow {
     draw(ctx) {
         if (!this.isActive) return;
 
-        // Ok çizimini döndür
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
 
         // Ok gövdesi
-        ctx.fillStyle = '#FFFFFF';
+        ctx.fillStyle = this.critical ? '#FFD700' : '#FFFFFF';
         ctx.fillRect(0, -this.height/2, this.width, this.height);
+
+        // Ok ucu
+        ctx.beginPath();
+        ctx.moveTo(this.width, -this.height);
+        ctx.lineTo(this.width + 5, 0);
+        ctx.lineTo(this.width, this.height);
+        ctx.fill();
 
         ctx.restore();
     }

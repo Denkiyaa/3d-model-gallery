@@ -4,68 +4,83 @@ export const GAME_CONFIG = {
     CASTLE_X: 50,
     CASTLE_WIDTH: 100,
     INITIAL_LIVES: 3,
+    ARROW_SPEED: 10,
+    BOSS_SPEED: 2,
+    SPAWN_DELAY: 2000,
+    INITIAL_WAVE: 1,
+    
+    // Player ayarları
+    PLAYER: {
+        WIDTH: 40,
+        HEIGHT: 60,
+        X: 100,
+        INITIAL_DAMAGE: 35,
+        INITIAL_ATTACK_SPEED: 1000,
+        INITIAL_CRIT_CHANCE: 0.15,
+        INITIAL_MULTI_SHOT: 1,
+        INITIAL_ARROWS: 1
+    },
+    
+    // Enemy ayarları
+    ENEMY: {
+        WIDTH: 40,
+        HEIGHT: 40,
+        BASE_HEALTH: 90,
+        BASE_DAMAGE: 8,
+        BASE_SPEED: 0.8,
+        HEALTH_INCREMENT: 15,
+        SPEED_INCREMENT: 0.08,
+        BOSS_HEALTH_MULTIPLIER: 2.5,
+        BOSS_SPEED_MULTIPLIER: 0.6
+    },
     
     // Wave ayarları
     WAVE: {
         INITIAL_ENEMIES: 3,        // İlk wave'deki düşman sayısı
         ENEMIES_INCREMENT: 1,      // Her wave'de eklenecek düşman sayısı
         BOSS_EVERY_N_WAVES: 5,     // Kaç wave'de bir boss gelecek
-        SPAWN_INTERVAL: 2000,      // Düşmanlar arası süre (ms)
-        SPAWN_INTERVAL_DECREASE: 50 // Her wave'de azalacak spawn süresi
-    },
-
-    // Düşman ayarları
-    ENEMY: {
-        BASE_HEALTH: 100,          // Temel düşman canı
-        HEALTH_INCREMENT: 20,      // Her wave'de artacak can
-        BASE_SPEED: 1,             // Temel düşman hızı
-        SPEED_INCREMENT: 0.1,      // Her wave'de artacak hız
-        BOSS_HEALTH_MULTIPLIER: 3, // Boss can çarpanı
-        BOSS_SPEED_MULTIPLIER: 0.7 // Boss yavaş ama güçlü
-    },
-
-    // Oyuncu ayarları
-    PLAYER: {
-        INITIAL_DAMAGE: 25,        // Başlangıç hasarı (4 ok ile öldürme)
-        INITIAL_ATTACK_SPEED: 1,   // Saniyede 1 ok
-        INITIAL_CRIT_CHANCE: 0.1,  // %10 kritik şans
-        INITIAL_MULTI_SHOT: 1      // Tek ok
+        SPAWN_INTERVAL: 2500,      // Düşmanlar arası süre (ms)
+        SPAWN_INTERVAL_DECREASE: 40 // Her wave'de azalacak spawn süresi
     },
 
     // Kart sistemi
     CARDS: {
         OPTIONS_PER_WAVE: 3,       // Her wave sonrası sunulan kart sayısı
         RARITY_CHANCES: {
-            COMMON: 0.60,          // %60
+            COMMON: 0.65,          // %65
             RARE: 0.25,           // %25
-            EPIC: 0.10,           // %10
-            LEGENDARY: 0.05       // %5
+            EPIC: 0.08,           // %8
+            LEGENDARY: 0.02       // %2
         },
         UPGRADES: {
             DAMAGE: {
-                COMMON: 1.2,      // %20 artış
-                RARE: 1.4,        // %40 artış
-                EPIC: 1.6,        // %60 artış
-                LEGENDARY: 2.0    // %100 artış
+                COMMON: 1.15,      // %15 artış
+                RARE: 1.30,        // %30 artış
+                EPIC: 1.45,        // %45 artış
+                LEGENDARY: 1.70    // %70 artış
             },
             ATTACK_SPEED: {
-                COMMON: 1.15,     // %15 artış
-                RARE: 1.3,        // %30 artış
-                EPIC: 1.5,        // %50 artış
-                LEGENDARY: 1.8    // %80 artış
+                COMMON: 0.95,     // %5 hızlanma
+                RARE: 0.90,      // %10 hızlanma
+                EPIC: 0.85,      // %15 hızlanma
+                LEGENDARY: 0.80   // %20 hızlanma
             },
             CRIT_CHANCE: {
                 COMMON: 0.05,     // +%5
-                RARE: 0.10,       // +%10
-                EPIC: 0.15,       // +%15
-                LEGENDARY: 0.25   // +%25
+                RARE: 0.08,       // +%8
+                EPIC: 0.12,       // +%12
+                LEGENDARY: 0.18    // +%18
             },
             MULTI_SHOT: {
                 COMMON: 1,        // +1 ok
                 RARE: 1,          // +1 ok
-                EPIC: 2,          // +2 ok
-                LEGENDARY: 3      // +3 ok
+                EPIC: 1,          // +1 ok
+                LEGENDARY: 2      // +2 ok
             }
         }
     }
-}; 
+};
+
+// Geriye uyumluluk için ayrı exportlar
+export const PLAYER_CONFIG = GAME_CONFIG.PLAYER;
+export const ENEMY_CONFIG = GAME_CONFIG.ENEMY; 

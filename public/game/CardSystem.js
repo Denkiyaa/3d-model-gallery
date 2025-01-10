@@ -124,7 +124,7 @@ export class CardSystem {
                 this.game.player.attackSpeed = Math.max(100, this.game.player.attackSpeed * card.bonus);
                 break;
             case 'multiShot':
-                this.game.player.multipleArrows += card.bonus;
+                this.game.player.multipleArrows = Math.min(5, this.game.player.multipleArrows + card.bonus);
                 break;
             case 'critical':
                 this.game.player.criticalChance = Math.min(1, (this.game.player.criticalChance || 0) + card.bonus);
