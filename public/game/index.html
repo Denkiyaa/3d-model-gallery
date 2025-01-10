@@ -93,28 +93,16 @@
                 
                 leaderboardContainer.style.display = 'block';
                 
-                // API URL'sini belirle
-                const isLocal = window.location.hostname === 'localhost' || 
-                               window.location.hostname === '127.0.0.1' ||
-                               window.location.protocol === 'file:';
-                               
-                const API_URL = isLocal
-                    ? 'http://localhost:4000/api/leaderboard'  // Lokalde
-                    : '/api/leaderboard';  // Production'da
-                    
-                console.log('API isteği yapılıyor:', {
-                    url: API_URL,
-                    hostname: window.location.hostname,
-                    protocol: window.location.protocol
-                });
+                // Sunucudaki API'ye istek yap
+                const API_URL = 'https://craftedfromfilament.com/api/leaderboard';
                 
-                // API çağrısı
+                console.log('Sunucu API isteği yapılıyor:', API_URL);
+                
                 fetch(API_URL, {
                     headers: {
                         'Accept': 'application/json',
                         'Content-Type': 'application/json'
-                    },
-                    mode: 'cors'  // CORS ekle
+                    }
                 })
                 .then(response => {
                     console.log('API yanıtı:', response.status);
@@ -141,11 +129,7 @@
                         .join('');
                 })
                 .catch(error => {
-                    console.error('Hata detayları:', {
-                        message: error.message,
-                        type: error.name,
-                        stack: error.stack
-                    });
+                    console.error('Hata:', error);
                     document.getElementById('leaderboardList').innerHTML = 
                         `<li class="error">Hata: ${error.message}</li>`;
                 });

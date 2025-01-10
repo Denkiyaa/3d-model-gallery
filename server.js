@@ -30,10 +30,10 @@ const ScoreSchema = new mongoose.Schema({
 
 const Score = mongoose.model('Score', ScoreSchema);
 
-// MongoDB bağlantısı
-const MONGODB_URI = 'mongodb://denkiya:1327@craftedfromfilament.com:27017/gamedb?authSource=gamedb';
+// MongoDB bağlantısı - Sunucudaki MongoDB'ye bağlan
+const MONGODB_URI = 'mongodb://denkiya:1327@localhost:27017/gamedb?authSource=gamedb';
 
-console.log('Connecting to MongoDB:', MONGODB_URI);
+console.log('MongoDB bağlantısı başlatılıyor...');
 
 // Bağlantı durumunu global olarak takip et
 let isConnected = false;
@@ -48,25 +48,44 @@ mongoose.connect(MONGODB_URI, {
 }).then(() => {
     isConnected = true;
     console.log('MongoDB bağlantısı başarılı');
+    
+    // Test bağlantısı
+    return Score.findOne().exec();
+}).then(result => {
+    console.log('Test sorgusu sonucu:', result ? 'Veri var' : 'Veri yok');
 }).catch((err) => {
     isConnected = false;
-    console.error('MongoDB bağlantı detaylı hata:', {
+    console.error('MongoDB bağlantı hatası:', {
         message: err.message,
         code: err.code,
         name: err.name,
-        stack: err.stack
+        stack: err.stack,
+        state: mongoose.connection.readyState
     });
 });
 
 // Bağlantı durumunu izle
-mongoose.connection.on('error', (err) => {
-    isConnected = false;
-    console.error('MongoDB bağlantı hatası:', err);
+mongoose.connection.on('connecting', () => {
+    console.log('MongoDB bağlanıyor...');
+});
+
+mongoose.connection.on('connected', () => {
+    console.log('MongoDB bağlandı');
+    isConnected = true;
+});
+
+mongoose.connection.on('disconnecting', () => {
+    console.log('MongoDB bağlantısı kesiliyor...');
 });
 
 mongoose.connection.on('disconnected', () => {
+    console.log('MongoDB bağlantısı kesildi');
     isConnected = false;
-    console.error('MongoDB bağlantısı kesildi');
+});
+
+mongoose.connection.on('error', (err) => {
+    console.error('MongoDB bağlantı hatası:', err);
+    isConnected = false;
 });
 
 // Önce spesifik route'ları tanımlayalım
