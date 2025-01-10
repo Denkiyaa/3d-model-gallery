@@ -588,10 +588,7 @@ export class Game {
                     <p>Player: ${this.nickname}</p>
                     <p>Wave: ${this.waveManager.currentWave}</p>
                     <p>Final Score: ${this.score}</p>
-                    <div class="button-group">
-                        <button id="playAgain" class="medieval-button">Play Again</button>
-                        <button id="showLeaderboard" class="medieval-button gold">Leaderboard</button>
-                    </div>
+                    <button id="playAgain" class="medieval-button">Play Again</button>
                 </div>
             `;
             document.body.appendChild(gameOverScreen);
@@ -599,16 +596,6 @@ export class Game {
             // Play Again butonu
             document.getElementById('playAgain').addEventListener('click', () => {
                 window.location.reload();
-            });
-
-            // Leaderboard butonu
-            document.getElementById('showLeaderboard').addEventListener('click', () => {
-                const leaderboardContainer = document.getElementById('leaderboardContainer');
-                if (leaderboardContainer) {
-                    leaderboardContainer.style.display = 'block';
-                    // Leaderboard'u güncelle
-                    document.getElementById('showLeaderboard').click();
-                }
             });
         })
         .catch(error => {
@@ -622,9 +609,7 @@ export class Game {
                     <p>Player: ${this.nickname}</p>
                     <p>Wave: ${this.waveManager.currentWave}</p>
                     <p>Final Score: ${this.score}</p>
-                    <div class="button-group">
-                        <button id="playAgain" class="medieval-button">Play Again</button>
-                    </div>
+                    <button id="playAgain" class="medieval-button">Play Again</button>
                 </div>
             `;
             document.body.appendChild(gameOverScreen);
