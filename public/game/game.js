@@ -106,18 +106,19 @@ export class Game {
             if (enemy.x <= GAME_CONFIG.CASTLE_X + GAME_CONFIG.CASTLE_WIDTH) {
                 // Boss ise daha fazla hasar versin
                 if (enemy.isBoss) {
-                    this.currentHealth -= this.damagePerEnemy * 3; // Boss 3 kat hasar versin
+                    this.currentHealth -= enemy.damage; // Boss hasarı
                 } else {
-                    this.currentHealth -= this.damagePerEnemy;
+                    this.currentHealth -= enemy.damage;
                 }
                 
                 this.updateHealthBar();
-                this.enemies.splice(i, 1);
+                enemy.isActive = false;  // Düşmanı deaktive et
+                this.enemies.splice(i, 1);  // Düşmanı listeden kaldır
                 
                 // Can sıfırın altına düştü mü?
                 if (this.currentHealth <= 0) {
                     this.gameOver();
-                    return; // Oyun bitti, güncellemeyi durdur
+                    return;
                 }
                 continue;
             }
@@ -126,8 +127,8 @@ export class Game {
             
             // Düşman öldü mü?
             if (enemy.health <= 0) {
+                enemy.isActive = false;  // Düşmanı deaktive et
                 this.enemies.splice(i, 1);
-                // Boss ölünce daha fazla skor ver
                 this.score += enemy.isBoss ? 50 : 10;
                 this.updateScore();
                 continue;

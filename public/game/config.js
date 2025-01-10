@@ -32,7 +32,28 @@ export const GAME_CONFIG = {
         HEALTH_INCREMENT: 6,
         SPEED_INCREMENT: 0.03,
         BOSS_HEALTH_MULTIPLIER: 3.0,
-        BOSS_SPEED_MULTIPLIER: 0.15
+        BOSS_SPEED_MULTIPLIER: 0.4,
+        BOSS_SIZE_MULTIPLIER: 3,
+        BOSS_HEALTH_MULTIPLIER: 15,
+        BOSS_DAMAGE_MULTIPLIER: 3,
+        
+        // Animasyon değerleri
+        NORMAL: {
+            AMPLITUDE: {
+                MIN: 2,
+                MAX: 6
+            },
+            FREQUENCY: {
+                MIN: 0.01,
+                MAX: 0.03
+            },
+            WAVE_TIME_SPEED: 0.08
+        },
+        BOSS: {
+            AMPLITUDE: 2,
+            FREQUENCY: 0.005,
+            WAVE_TIME_SPEED: 0.03
+        }
     },
     
     // Wave ayarları
