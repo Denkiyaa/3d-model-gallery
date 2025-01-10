@@ -31,13 +31,13 @@ const ScoreSchema = new mongoose.Schema({
 
 const Score = mongoose.model('Score', ScoreSchema);
 
-// Bağlantı durumunu global olarak takip et
-let isConnected = false;
-
 // MongoDB bağlantısı
 const MONGODB_URI = 'mongodb://denkiya:1327@craftedfromfilament.com:27017/gamedb?authSource=gamedb';
 
-console.log('MongoDB bağlantı denemesi başlıyor...');
+console.log('Connecting to MongoDB:', MONGODB_URI);
+
+// Bağlantı durumunu global olarak takip et
+let isConnected = false;
 
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
@@ -51,34 +51,23 @@ mongoose.connect(MONGODB_URI, {
     console.log('MongoDB bağlantısı başarılı');
 }).catch((err) => {
     isConnected = false;
-    console.error('MongoDB bağlantı hatası:', err);
+    console.error('MongoDB bağlantı detaylı hata:', {
+        message: err.message,
+        code: err.code,
+        name: err.name,
+        stack: err.stack
+    });
 });
 
 // Bağlantı durumunu izle
-mongoose.connection.on('connecting', () => {
-    console.log('MongoDB bağlantı kuruluyor...');
-});
-
-mongoose.connection.on('connected', () => {
-    console.log('MongoDB bağlandı');
-});
-
-mongoose.connection.on('disconnecting', () => {
-    console.log('MongoDB bağlantısı kesiliyor...');
+mongoose.connection.on('error', (err) => {
+    isConnected = false;
+    console.error('MongoDB bağlantı hatası:', err);
 });
 
 mongoose.connection.on('disconnected', () => {
-    isConnected = false;  // Bağlantı koptuğunda false yap
-    console.log('MongoDB bağlantısı kesildi');
-});
-
-mongoose.connection.on('error', (err) => {
-    isConnected = false;  // Hata durumunda false yap
-    console.error('MongoDB bağlantı hatası:', {
-        message: err.message,
-        code: err.code,
-        name: err.name
-    });
+    isConnected = false;
+    console.error('MongoDB bağlantısı kesildi');
 });
 
 // Önce spesifik route'ları tanımlayalım
@@ -102,52 +91,26 @@ app.use((req, res, next) => {
     next();
 });
 
-// API route'ları için prefix ekleyelim
-app.use('/api', (req, res, next) => {
-    console.log('API isteği:', req.method, req.url);
-    next();
-});
-
 // API route'ları MongoDB ile güncellenmiş hali
 app.post('/api/login', async (req, res) => {
     console.log('Login isteği geldi:', req.body);
     const { nickname } = req.body;
-    
-    if (!isConnected) {
-        console.error('MongoDB bağlantısı yok!');
-        return res.status(500).json({ 
-            error: 'Veritabanı bağlantısı kurulamadı',
-            connected: false 
-        });
-    }
-
     try {
         let player = await Score.findOne({ nickname });
-        console.log('Oyuncu arama sonucu:', player);
-        
         if (!player) {
-            console.log('Yeni oyuncu oluşturuluyor...');
             player = new Score({
                 nickname,
                 highScore: 0,
                 lastPlayed: new Date()
             });
+            console.log('Yeni oyuncu oluşturuluyor:', player);
             await player.save();
-            console.log('Yeni oyuncu kaydedildi:', player);
         }
-        
+        console.log('Login başarılı:', player);
         res.json(player);
     } catch (error) {
-        console.error('Login işlem hatası:', {
-            message: error.message,
-            code: error.code,
-            name: error.name,
-            stack: error.stack
-        });
-        res.status(500).json({ 
-            error: 'Sunucu hatası',
-            details: error.message 
-        });
+        console.error('Login hatası:', error);
+        res.status(500).json({ error: 'Sunucu hatası' });
     }
 });
 
@@ -196,22 +159,30 @@ app.post('/api/score', async (req, res) => {
 });
 
 app.get('/api/leaderboard', async (req, res) => {
-    console.log('Leaderboard isteği geldi');
     try {
+        // Bağlantı kontrolü
         if (!isConnected) {
-            console.log('MongoDB bağlantı durumu:', {
-                state: mongoose.connection.readyState,
-                uri: MONGODB_URI
-            });
             throw new Error('Veritabanı bağlantısı aktif değil');
         }
 
-        console.log('Leaderboard sorgusu yapılıyor...');
-        const scores = await Score.find()
-            .sort({ highScore: -1 })
-            .limit(10)
-            .select('nickname highScore lastPlayed -_id')
-            .lean();
+        // Veritabanı sorgusunu try-catch içine al
+        let scores;
+        try {
+            scores = await Score.find()
+                .sort({ highScore: -1 })
+                .limit(10)
+                .select('nickname highScore lastPlayed -_id')
+                .lean()
+                .exec();
+        } catch (dbError) {
+            console.error('Veritabanı sorgu hatası:', dbError);
+            throw new Error('Veritabanı sorgusu başarısız');
+        }
+
+        // Sonuçları kontrol et
+        if (!scores) {
+            return res.json([]);
+        }
 
         console.log('Bulunan skorlar:', scores);
         res.json(scores);
@@ -221,6 +192,7 @@ app.get('/api/leaderboard', async (req, res) => {
             stack: error.stack,
             mongoState: mongoose.connection.readyState
         });
+        
         res.status(500).json({ 
             error: 'Leaderboard alınamadı',
             details: error.message,
@@ -229,22 +201,16 @@ app.get('/api/leaderboard', async (req, res) => {
     }
 });
 
-// Route sıralamasını düzenleyelim
-// 1. Önce statik dosyalar
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/game', express.static(path.join(__dirname, 'public/game')));
-
-// 2. Oyun route'u
+// Oyun route'u
 app.get('/game/*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/game/index.html'));
 });
 
-// 3. En son catch-all route
-app.get('*', (req, res) => {
-    if (req.url.startsWith('/api')) {
-        return res.status(404).json({ error: 'API endpoint bulunamadı' });
+// React uygulaması için route'lar
+app.get('/*', (req, res) => {
+    if (!req.path.startsWith('/game') && !req.path.startsWith('/api')) {
+        res.sendFile(path.join(__dirname, 'public/index.html'));
     }
-    res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
 // Test fonksiyonu ekle
@@ -278,28 +244,6 @@ app.post('/api/test-write', async (req, res) => {
             details: error.message,
             connected: isConnected
         });
-    }
-});
-
-// Bağlantı durumunu kontrol eden middleware
-app.use('/api', (req, res, next) => {
-    if (!isConnected) {
-        // Bağlantı kopuksa yeniden bağlanmayı dene
-        mongoose.connect(MONGODB_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true
-        }).then(() => {
-            isConnected = true;
-            next();
-        }).catch(err => {
-            console.error('Yeniden bağlantı hatası:', err);
-            res.status(500).json({ 
-                error: 'Veritabanı bağlantısı kurulamadı',
-                details: err.message 
-            });
-        });
-    } else {
-        next();
     }
 });
 
