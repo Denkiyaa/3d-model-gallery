@@ -152,11 +152,37 @@ export class Game {
                 continue;
             }
             
+            // Ok aktif değilse veya hedef ölmüşse devam et
+            if (!arrow.isActive || arrow.target.health <= 0) {
+                continue;
+            }
+            
             // Ok düşmana çarptı mı?
             if (this.checkCollision(arrow, arrow.target)) {
-                const damage = arrow.critical ? this.player.damage * 2 : this.player.damage;
+                const isCritical = Math.random() < this.player.criticalChance;
+                const damage = isCritical ? this.player.damage * 2 : this.player.damage;
+                
+                // Hasar yazısı ekle
+                this.damageTexts.push(new DamageText(
+                    arrow.target.x + arrow.target.width / 2,
+                    arrow.target.y,
+                    Math.round(damage),
+                    isCritical
+                ));
+                
                 arrow.target.health -= damage;
-                this.arrows.splice(i, 1);
+                arrow.isActive = false;  // Oku deaktive et
+                this.arrows.splice(i, 1);  // Oku kaldır
+                
+                // Düşman öldü mü kontrol et
+                if (arrow.target.health <= 0) {
+                    const enemyIndex = this.enemies.indexOf(arrow.target);
+                    if (enemyIndex !== -1) {
+                        this.enemies.splice(enemyIndex, 1);
+                        this.score += arrow.target.isBoss ? 50 : 10;
+                        this.updateScore();
+                    }
+                }
             }
         }
         
@@ -177,32 +203,10 @@ export class Game {
     }
 
     checkCollision(arrow, enemy) {
-        if (arrow.x < enemy.x + enemy.width &&
-            arrow.x + arrow.width > enemy.x &&
-            arrow.y < enemy.y + enemy.height &&
-            arrow.y + arrow.height > enemy.y) {
-
-            // Kritik vuruş kontrolü
-            const isCritical = Math.random() < this.player.critChance;
-            const damage = isCritical ? this.player.damage * 2 : this.player.damage;
-
-            // Hasar yazısı ekle
-            this.damageTexts.push(new DamageText(
-                enemy.x + enemy.width / 2,
-                enemy.y,
-                Math.round(damage),
-                isCritical
-            ));
-
-            enemy.health -= damage;
-            arrow.isActive = false;
-
-            if (enemy.health <= 0) {
-                enemy.isActive = false;
-                this.score += 10;
-                this.updateScore();
-            }
-        }
+        return (arrow.x < enemy.x + enemy.width &&
+                arrow.x + arrow.width > enemy.x &&
+                arrow.y < enemy.y + enemy.height &&
+                arrow.y + arrow.height > enemy.y);
     }
 
     draw() {
