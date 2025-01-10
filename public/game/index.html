@@ -124,29 +124,18 @@
                         return;
                     }
 
-                    // Skorları sırala (en yüksekten düşüğe)
-                    scores.sort((a, b) => b.highScore - a.highScore);
-
-                    // İlk 10 skoru göster
                     leaderboardList.innerHTML = scores
-                        .slice(0, 10)
                         .map((score, index) => {
-                            // Sıralamaya göre stil ekle
                             let rankClass = '';
                             if (index === 0) rankClass = 'gold';
                             else if (index === 1) rankClass = 'silver';
                             else if (index === 2) rankClass = 'bronze';
-
-                            // Tarihi formatla
-                            const date = new Date(score.lastPlayed);
-                            const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
 
                             return `
                                 <li class="leaderboard-item ${rankClass}">
                                     <span class="rank">#${index + 1}</span>
                                     <span class="nickname">${score.nickname}</span>
                                     <span class="score">${score.highScore}</span>
-                                    <span class="date">${formattedDate}</span>
                                 </li>
                             `;
                         })
