@@ -563,56 +563,75 @@ export class Game {
         const waveStatus = document.getElementById('waveStatus');
         if (waveStatus) waveStatus.style.display = 'none';
 
-        // Game Over ekranı - resimde gördüğümüz gibi basit ve net
-        const gameOverScreen = document.createElement('div');
-        gameOverScreen.className = 'game-over-screen';
-        gameOverScreen.innerHTML = `
-            <div class="game-over-content">
-                <h1 style="color: red;">Game Over!</h1>
-                <p>Player: ${this.nickname}</p>
-                <p>Wave: ${this.waveManager.currentWave}</p>
-                <p>Final Score: ${this.score}</p>
-                <div class="button-group">
-                    <button id="playAgain" class="medieval-button">Play Again</button>
-                    <button id="saveScore" class="medieval-button">Save Score</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(gameOverScreen);
-
-        // Butonlara tıklama olayları
-        document.getElementById('saveScore').addEventListener('click', () => {
-            const API_URL = 'https://craftedfromfilament.com/api/score';
-            
-            console.log('Skor kaydediliyor:', {
-                url: API_URL,
+        // Skoru otomatik kaydet
+        const API_URL = 'https://craftedfromfilament.com/api/score';
+        fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
                 nickname: this.nickname,
                 score: this.score
-            });
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Skor kaydedildi:', data);
             
-            fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    nickname: this.nickname,
-                    score: this.score
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Skor kaydedildi:', data);
-                // ... diğer kodlar
-            })
-            .catch(error => {
-                console.error('Skor kaydetme hatası:', error);
-                // ... hata işleme
-            });
-        });
+            // Game Over ekranı
+            const gameOverScreen = document.createElement('div');
+            gameOverScreen.className = 'game-over-screen';
+            gameOverScreen.innerHTML = `
+                <div class="game-over-content">
+                    <h1>Game Over!</h1>
+                    <p>Player: ${this.nickname}</p>
+                    <p>Wave: ${this.waveManager.currentWave}</p>
+                    <p>Final Score: ${this.score}</p>
+                    <div class="button-group">
+                        <button id="playAgain" class="medieval-button">Play Again</button>
+                        <button id="showLeaderboard" class="medieval-button gold">Leaderboard</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(gameOverScreen);
 
-        document.getElementById('playAgain').addEventListener('click', () => {
-            window.location.reload();
+            // Play Again butonu
+            document.getElementById('playAgain').addEventListener('click', () => {
+                window.location.reload();
+            });
+
+            // Leaderboard butonu
+            document.getElementById('showLeaderboard').addEventListener('click', () => {
+                const leaderboardContainer = document.getElementById('leaderboardContainer');
+                if (leaderboardContainer) {
+                    leaderboardContainer.style.display = 'block';
+                    // Leaderboard'u güncelle
+                    document.getElementById('showLeaderboard').click();
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Skor kaydetme hatası:', error);
+            // Hata olsa bile game over ekranını göster
+            const gameOverScreen = document.createElement('div');
+            gameOverScreen.className = 'game-over-screen';
+            gameOverScreen.innerHTML = `
+                <div class="game-over-content">
+                    <h1>Game Over!</h1>
+                    <p>Player: ${this.nickname}</p>
+                    <p>Wave: ${this.waveManager.currentWave}</p>
+                    <p>Final Score: ${this.score}</p>
+                    <div class="button-group">
+                        <button id="playAgain" class="medieval-button">Play Again</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(gameOverScreen);
+
+            document.getElementById('playAgain').addEventListener('click', () => {
+                window.location.reload();
+            });
         });
     }
 }
