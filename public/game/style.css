@@ -472,10 +472,10 @@ span {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 15px;
-    margin: 5px 0;
+    padding: 15px 20px;
+    margin: 8px 0;
     background: rgba(0, 0, 0, 0.5);
-    border-radius: 5px;
+    border-radius: 8px;
     transition: all 0.3s ease;
 }
 
@@ -484,41 +484,43 @@ span {
     background: rgba(0, 0, 0, 0.7);
 }
 
-.leaderboard-item .rank {
-    font-weight: bold;
-    width: 40px;
+.rank-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
-.leaderboard-item .nickname {
-    flex: 1;
-    margin: 0 10px;
-    text-align: left;
-}
-
-.leaderboard-item .score {
+.rank {
     font-weight: bold;
-    margin: 0 10px;
+    font-size: 1.2em;
     color: #FFD700;
+    min-width: 40px;
 }
 
-.leaderboard-item .date {
-    font-size: 0.8em;
-    color: #999;
+.nickname {
+    font-size: 1.1em;
+    color: #fff;
+}
+
+.score {
+    font-weight: bold;
+    font-size: 1.2em;
+    color: #FFD700;
 }
 
 /* İlk 3 sıra için özel stiller */
 .leaderboard-item.gold {
-    background: linear-gradient(90deg, rgba(255,215,0,0.3), rgba(0,0,0,0.5));
+    background: linear-gradient(90deg, rgba(255,215,0,0.2), rgba(0,0,0,0.5));
     border: 1px solid #FFD700;
 }
 
 .leaderboard-item.silver {
-    background: linear-gradient(90deg, rgba(192,192,192,0.3), rgba(0,0,0,0.5));
+    background: linear-gradient(90deg, rgba(192,192,192,0.2), rgba(0,0,0,0.5));
     border: 1px solid #C0C0C0;
 }
 
 .leaderboard-item.bronze {
-    background: linear-gradient(90deg, rgba(205,127,50,0.3), rgba(0,0,0,0.5));
+    background: linear-gradient(90deg, rgba(205,127,50,0.2), rgba(0,0,0,0.5));
     border: 1px solid #CD7F32;
 }
 

@@ -133,9 +133,13 @@
 
                             return `
                                 <li class="leaderboard-item ${rankClass}">
-                                    <span class="rank">#${index + 1}</span>
-                                    <span class="nickname">${score.nickname}</span>
-                                    <span class="score">${score.highScore}</span>
+                                    <div class="rank-info">
+                                        <span class="rank">#${index + 1}</span>
+                                        <span class="nickname">${score.nickname}</span>
+                                    </div>
+                                    <div class="score-info">
+                                        <span class="score">${score.highScore}</span>
+                                    </div>
                                 </li>
                             `;
                         })
