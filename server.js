@@ -244,18 +244,15 @@ app.get('/api/leaderboard', async (req, res) => {
     }
 });
 
-// Oyun route'u
+// Route sıralamasını düzenleyelim
+// 1. Önce statik dosyalar
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/game', express.static(path.join(__dirname, 'public/game')));
+
+// 2. Oyun route'u
 app.get('/game/*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/game/index.html'));
 });
-
-// Route sıralamasını düzenleyelim
-// 1. Önce API route'ları
-app.use('/api', require('./routes/api'));  // API route'larını ayrı dosyaya taşıyabiliriz
-
-// 2. Sonra statik dosyalar
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/game', express.static(path.join(__dirname, 'public/game')));
 
 // 3. En son catch-all route
 app.get('*', (req, res) => {
