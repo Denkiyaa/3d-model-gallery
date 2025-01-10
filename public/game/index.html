@@ -93,8 +93,15 @@
                 
                 leaderboardContainer.style.display = 'block';
                 
+                // API URL'sini belirle
+                const API_URL = window.location.port === '3000' 
+                    ? 'http://localhost:4000/api/leaderboard'  // Lokalde development
+                    : '/api/leaderboard';  // Production'da
+                    
+                console.log('API isteği yapılıyor:', API_URL);
+                
                 // API çağrısı
-                fetch('/api/leaderboard', {
+                fetch(API_URL, {
                     headers: {
                         'Accept': 'application/json',
                         'Content-Type': 'application/json'
