@@ -207,12 +207,15 @@ app.post('/api/score', async (req, res) => {
     }
 });
 
-// 3. Statik dosyalar
-app.use(express.static(path.join(__dirname, 'public')));
+// Statik dosya servis ayarları
+// Önce spesifik route'lar
 app.use('/game', express.static(path.join(__dirname, 'public/game')));
 app.use('/models', express.static(path.join(__dirname, 'public/models')));
 
-// 4. Oyun route'u
+// Sonra genel public klasörü
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Oyun route'u - her zaman index.html'i serve et
 app.get('/game/*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/game/index.html'));
 });
