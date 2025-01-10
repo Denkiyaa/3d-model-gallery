@@ -31,10 +31,8 @@ const ScoreSchema = new mongoose.Schema({
 
 const Score = mongoose.model('Score', ScoreSchema);
 
-// MongoDB bağlantısı - Sunucudaki MongoDB'ye bağlan
-const MONGODB_URI = process.env.NODE_ENV === 'production' 
-    ? 'mongodb://denkiya:1327@localhost:27017/gamedb?authSource=gamedb'  // Sunucuda çalışırken
-    : 'mongodb://denkiya:1327@craftedfromfilament.com:27017/gamedb?authSource=gamedb';  // Lokalde development yaparken
+// MongoDB bağlantısı
+const MONGODB_URI = 'mongodb://denkiya:1327@craftedfromfilament.com:27017/gamedb?authSource=gamedb';
 
 console.log('Connecting to MongoDB:', MONGODB_URI);
 
@@ -51,20 +49,14 @@ mongoose.connect(MONGODB_URI, {
 }).then(() => {
     isConnected = true;
     console.log('MongoDB bağlantısı başarılı');
-    
-    // Test verisi ekle
-    const testScore = new Score({
-        nickname: 'test_connection',
-        highScore: 100,
-        lastPlayed: new Date()
-    });
-    
-    return testScore.save();
-}).then((savedScore) => {
-    console.log('Test verisi başarıyla kaydedildi:', savedScore);
 }).catch((err) => {
     isConnected = false;
-    console.error('MongoDB bağlantı hatası:', err);
+    console.error('MongoDB bağlantı detaylı hata:', {
+        message: err.message,
+        code: err.code,
+        name: err.name,
+        stack: err.stack
+    });
 });
 
 // Bağlantı durumunu izle
@@ -103,22 +95,42 @@ app.use((req, res, next) => {
 app.post('/api/login', async (req, res) => {
     console.log('Login isteği geldi:', req.body);
     const { nickname } = req.body;
+    
+    if (!isConnected) {
+        console.error('MongoDB bağlantısı yok!');
+        return res.status(500).json({ 
+            error: 'Veritabanı bağlantısı kurulamadı',
+            connected: false 
+        });
+    }
+
     try {
         let player = await Score.findOne({ nickname });
+        console.log('Oyuncu arama sonucu:', player);
+        
         if (!player) {
+            console.log('Yeni oyuncu oluşturuluyor...');
             player = new Score({
                 nickname,
                 highScore: 0,
                 lastPlayed: new Date()
             });
-            console.log('Yeni oyuncu oluşturuluyor:', player);
             await player.save();
+            console.log('Yeni oyuncu kaydedildi:', player);
         }
-        console.log('Login başarılı:', player);
+        
         res.json(player);
     } catch (error) {
-        console.error('Login hatası:', error);
-        res.status(500).json({ error: 'Sunucu hatası' });
+        console.error('Login işlem hatası:', {
+            message: error.message,
+            code: error.code,
+            name: error.name,
+            stack: error.stack
+        });
+        res.status(500).json({ 
+            error: 'Sunucu hatası',
+            details: error.message 
+        });
     }
 });
 
@@ -167,30 +179,22 @@ app.post('/api/score', async (req, res) => {
 });
 
 app.get('/api/leaderboard', async (req, res) => {
+    console.log('Leaderboard isteği geldi');
     try {
-        // Bağlantı kontrolü
         if (!isConnected) {
+            console.log('MongoDB bağlantı durumu:', {
+                state: mongoose.connection.readyState,
+                uri: MONGODB_URI
+            });
             throw new Error('Veritabanı bağlantısı aktif değil');
         }
 
-        // Veritabanı sorgusunu try-catch içine al
-        let scores;
-        try {
-            scores = await Score.find()
-                .sort({ highScore: -1 })
-                .limit(10)
-                .select('nickname highScore lastPlayed -_id')
-                .lean()
-                .exec();
-        } catch (dbError) {
-            console.error('Veritabanı sorgu hatası:', dbError);
-            throw new Error('Veritabanı sorgusu başarısız');
-        }
-
-        // Sonuçları kontrol et
-        if (!scores) {
-            return res.json([]);
-        }
+        console.log('Leaderboard sorgusu yapılıyor...');
+        const scores = await Score.find()
+            .sort({ highScore: -1 })
+            .limit(10)
+            .select('nickname highScore lastPlayed -_id')
+            .lean();
 
         console.log('Bulunan skorlar:', scores);
         res.json(scores);
@@ -200,7 +204,6 @@ app.get('/api/leaderboard', async (req, res) => {
             stack: error.stack,
             mongoState: mongoose.connection.readyState
         });
-        
         res.status(500).json({ 
             error: 'Leaderboard alınamadı',
             details: error.message,
