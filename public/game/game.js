@@ -107,13 +107,15 @@ export class Game {
                 // Boss ise daha fazla hasar versin
                 if (enemy.isBoss) {
                     this.currentHealth -= enemy.damage; // Boss hasarı
+                    enemy.isActive = false;  // Boss'u deaktive et
+                    this.enemies.splice(i, 1);  // Boss'u listeden kaldır
                 } else {
                     this.currentHealth -= enemy.damage;
+                    enemy.isActive = false;
+                    this.enemies.splice(i, 1);
                 }
                 
                 this.updateHealthBar();
-                enemy.isActive = false;  // Düşmanı deaktive et
-                this.enemies.splice(i, 1);  // Düşmanı listeden kaldır
                 
                 // Can sıfırın altına düştü mü?
                 if (this.currentHealth <= 0) {
@@ -127,7 +129,7 @@ export class Game {
             
             // Düşman öldü mü?
             if (enemy.health <= 0) {
-                enemy.isActive = false;  // Düşmanı deaktive et
+                enemy.isActive = false;
                 this.enemies.splice(i, 1);
                 this.score += enemy.isBoss ? 50 : 10;
                 this.updateScore();
