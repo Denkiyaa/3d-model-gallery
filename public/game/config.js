@@ -32,7 +32,7 @@ export const GAME_CONFIG = {
         HEALTH_INCREMENT: 6,
         SPEED_INCREMENT: 0.03,
         BOSS_HEALTH_MULTIPLIER: 3.0,
-        BOSS_SPEED_MULTIPLIER: 0.4
+        BOSS_SPEED_MULTIPLIER: 0.15
     },
     
     // Wave ayarları
