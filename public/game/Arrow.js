@@ -73,6 +73,14 @@ export class Arrow {
             const dy = this.targetFinalY - this.y;
             const distanceToTarget = Math.sqrt(dx * dx + dy * dy);
 
+            // Eğer ok hedefin son konumunu geçtiyse
+            const dotProduct = dx * this.velocityX + dy * this.velocityY;
+            if (dotProduct < 0) {
+                // Ok hedefi geçti, deaktive et
+                this.isActive = false;
+                return;
+            }
+
             if (distanceToTarget < this.speed) {
                 // Hedefe ulaştık, oku deaktive et
                 this.isActive = false;
@@ -92,15 +100,38 @@ export class Arrow {
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
 
-        // Ok gövdesi
-        ctx.fillStyle = this.critical ? '#FFD700' : '#FFFFFF';
-        ctx.fillRect(0, -this.height/2, this.width, this.height);
+        // Ok gövdesi (daha ince)
+        const shaftWidth = 12;
+        const shaftHeight = 2;
+        ctx.fillStyle = this.critical ? '#FFD700' : '#D3D3D3';
+        ctx.fillRect(0, -shaftHeight/2, shaftWidth, shaftHeight);
 
-        // Ok ucu
+        // Ok ucu (daha büyük ve üçgen)
         ctx.beginPath();
-        ctx.moveTo(this.width, -this.height);
-        ctx.lineTo(this.width + 5, 0);
-        ctx.lineTo(this.width, this.height);
+        ctx.fillStyle = this.critical ? '#FFA500' : '#A0A0A0';
+        ctx.moveTo(shaftWidth - 2, -4);  // Uç başlangıcı biraz içeriden
+        ctx.lineTo(shaftWidth + 6, 0);   // Uç noktası
+        ctx.lineTo(shaftWidth - 2, 4);   // Diğer kenar
+        ctx.closePath();
+        ctx.fill();
+
+        // Ok tüyleri
+        ctx.fillStyle = this.critical ? '#FFD700' : '#FFFFFF';
+        
+        // Sol tüy
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-4, -3);
+        ctx.lineTo(4, -3);
+        ctx.closePath();
+        ctx.fill();
+
+        // Sağ tüy
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(-4, 3);
+        ctx.lineTo(4, 3);
+        ctx.closePath();
         ctx.fill();
 
         ctx.restore();
