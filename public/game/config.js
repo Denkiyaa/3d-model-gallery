@@ -14,7 +14,7 @@ export const GAME_CONFIG = {
         WIDTH: 40,
         HEIGHT: 60,
         X: 100,
-        INITIAL_DAMAGE: 18,
+        INITIAL_DAMAGE: 25,
         INITIAL_ATTACK_SPEED: 1300,
         INITIAL_CRIT_CHANCE: 0.08,
         INITIAL_CRIT_DAMAGE: 1.5,
