@@ -80,7 +80,39 @@ export class CardSystem {
         
         const selectedCards = selectedTypes.map(type => {
             const cards = this.cardPool[type];
-            const card = cards[Math.floor(Math.random() * cards.length)];
+            
+            // Rarity seçimi için random sayı
+            const rand = Math.random();
+            let selectedRarity;
+            
+            // Boss wave'de daha iyi kartlar gelsin
+            if (isBossWave) {
+                if (rand < 0.40) selectedRarity = 'common';
+                else if (rand < 0.75) selectedRarity = 'rare';
+                else if (rand < 0.95) selectedRarity = 'epic';
+                else selectedRarity = 'legendary';
+            } else {
+                // Normal wave'lerde legendary çok nadir
+                if (rand < 0.65) selectedRarity = 'common';
+                else if (rand < 0.90) selectedRarity = 'rare';
+                else if (rand < 0.99) selectedRarity = 'epic';
+                else selectedRarity = 'legendary'; // Sadece %1 şans
+            }
+
+            // Seçilen rarity'de kart var mı kontrol et
+            const cardsOfRarity = cards.filter(card => card.rarity === selectedRarity);
+            
+            // Yoksa bir alt rarity'ye düş
+            if (cardsOfRarity.length === 0) {
+                if (selectedRarity === 'legendary') selectedRarity = 'epic';
+                else if (selectedRarity === 'epic') selectedRarity = 'rare';
+                else selectedRarity = 'common';
+            }
+
+            // Seçilen rarity'deki kartlardan birini rastgele seç
+            const availableCards = cards.filter(card => card.rarity === selectedRarity);
+            const card = availableCards[Math.floor(Math.random() * availableCards.length)];
+            
             return { ...card, type };
         });
 
