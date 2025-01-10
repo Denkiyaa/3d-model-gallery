@@ -31,6 +31,9 @@ const ScoreSchema = new mongoose.Schema({
 
 const Score = mongoose.model('Score', ScoreSchema);
 
+// Bağlantı durumunu global olarak takip et
+let isConnected = false;
+
 // MongoDB bağlantısı
 const MONGODB_URI = 'mongodb://denkiya:1327@craftedfromfilament.com:27017/gamedb?authSource=gamedb';
 
@@ -46,7 +49,7 @@ mongoose.connect(MONGODB_URI, {
     retryWrites: true,
     w: 'majority'
 }).then(() => {
-    isConnected = true;
+    isConnected = true;  // Bağlantı başarılı olduğunda true yap
     console.log('MongoDB bağlantısı başarılı');
     
     // Test bağlantısı
@@ -54,7 +57,7 @@ mongoose.connect(MONGODB_URI, {
 }).then((testResult) => {
     console.log('Test sorgusu sonucu:', testResult ? 'Veri bulundu' : 'Veri bulunamadı');
 }).catch((err) => {
-    isConnected = false;
+    isConnected = false;  // Hata durumunda false yap
     console.error('MongoDB bağlantı hatası detayları:', {
         message: err.message,
         code: err.code,
@@ -80,10 +83,12 @@ mongoose.connection.on('disconnecting', () => {
 });
 
 mongoose.connection.on('disconnected', () => {
+    isConnected = false;  // Bağlantı koptuğunda false yap
     console.log('MongoDB bağlantısı kesildi');
 });
 
 mongoose.connection.on('error', (err) => {
+    isConnected = false;  // Hata durumunda false yap
     console.error('MongoDB bağlantı hatası:', {
         message: err.message,
         code: err.code,
@@ -109,6 +114,12 @@ app.use((req, res, next) => {
         url: req.url,
         body: req.body
     });
+    next();
+});
+
+// API route'ları için prefix ekleyelim
+app.use('/api', (req, res, next) => {
+    console.log('API isteği:', req.method, req.url);
     next();
 });
 
@@ -238,11 +249,20 @@ app.get('/game/*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/game/index.html'));
 });
 
-// React uygulaması için route'lar
-app.get('/*', (req, res) => {
-    if (!req.path.startsWith('/game') && !req.path.startsWith('/api')) {
-        res.sendFile(path.join(__dirname, 'public/index.html'));
+// Route sıralamasını düzenleyelim
+// 1. Önce API route'ları
+app.use('/api', require('./routes/api'));  // API route'larını ayrı dosyaya taşıyabiliriz
+
+// 2. Sonra statik dosyalar
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/game', express.static(path.join(__dirname, 'public/game')));
+
+// 3. En son catch-all route
+app.get('*', (req, res) => {
+    if (req.url.startsWith('/api')) {
+        return res.status(404).json({ error: 'API endpoint bulunamadı' });
     }
+    res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
 // Test fonksiyonu ekle
