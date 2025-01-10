@@ -31,8 +31,12 @@ const ScoreSchema = new mongoose.Schema({
 
 const Score = mongoose.model('Score', ScoreSchema);
 
-// MongoDB bağlantısı
-const MONGODB_URI = 'mongodb://denkiya:1327@localhost:27017/gamedb?authSource=gamedb';
+// MongoDB bağlantısı - Sunucudaki MongoDB'ye bağlan
+const MONGODB_URI = process.env.NODE_ENV === 'production' 
+    ? 'mongodb://denkiya:1327@localhost:27017/gamedb?authSource=gamedb'  // Sunucuda çalışırken
+    : 'mongodb://denkiya:1327@craftedfromfilament.com:27017/gamedb?authSource=gamedb';  // Lokalde development yaparken
+
+console.log('Connecting to MongoDB:', MONGODB_URI);
 
 // Bağlantı durumunu global olarak takip et
 let isConnected = false;
