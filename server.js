@@ -6,6 +6,7 @@ const cors = require('cors');
 const app = express();
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 // Global hata yakalama
 process.on('uncaughtException', (error) => {
     console.error('Uncaught Exception:', error);
@@ -157,11 +158,63 @@ app.post('/api/login', (req, res) => {
         scores.push(player);
         writeScores(scores);
 >>>>>>> d756bf6e02cc61c29851f813be5bb5671d5aac8d
+=======
+app.use(cors());
+app.use(express.json());
+app.use(express.static('public'));
+
+const SCORES_FILE = path.join(__dirname, 'data', 'scores.json');
+
+// Skorları oku
+function readScores() {
+    try {
+        const data = fs.readFileSync(SCORES_FILE, 'utf8');
+        return JSON.parse(data).scores;
+    } catch (error) {
+        return [];
+    }
+}
+
+// Skorları kaydet
+function writeScores(scores) {
+    fs.writeFileSync(SCORES_FILE, JSON.stringify({ scores }, null, 2));
+}
+
+// Yeni oyuncu/skor kaydet
+app.post('/api/login', (req, res) => {
+    const { nickname } = req.body;
+    const scores = readScores();
+    const player = scores.find(p => p.nickname === nickname) || {
+        nickname,
+        highScore: 0,
+        lastPlayed: new Date()
+    };
+    
+    if (!scores.find(p => p.nickname === nickname)) {
+        scores.push(player);
+        writeScores(scores);
     }
     
     res.json(player);
 });
 
+// Skor güncelle
+app.post('/api/score', (req, res) => {
+    const { nickname, score } = req.body;
+    const scores = readScores();
+    const player = scores.find(p => p.nickname === nickname);
+    
+    if (player && score > player.highScore) {
+        player.highScore = score;
+        player.lastPlayed = new Date();
+        writeScores(scores);
+>>>>>>> d756bf6e02cc61c29851f813be5bb5671d5aac8d
+    }
+    
+    res.json(player);
+});
+
+<<<<<<< HEAD
 <<<<<<< HEAD
 app.get('/api/leaderboard', async (req, res) => {
     try {
@@ -222,6 +275,18 @@ app.post('/api/score', (req, res) => {
     res.json(player);
 });
 
+// Liderlik tablosu
+app.get('/api/leaderboard', (req, res) => {
+    const scores = readScores()
+        .sort((a, b) => b.highScore - a.highScore)
+        .slice(0, 10);
+    res.json(scores);
+});
+
+const PORT = 3000;
+app.listen(PORT, () => {
+>>>>>>> d756bf6e02cc61c29851f813be5bb5671d5aac8d
+=======
 // Liderlik tablosu
 app.get('/api/leaderboard', (req, res) => {
     const scores = readScores()
