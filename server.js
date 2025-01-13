@@ -3,9 +3,9 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
-const mongoose = require('mongoose');
 const app = express();
 
+<<<<<<< HEAD
 // Global hata yakalama
 process.on('uncaughtException', (error) => {
     console.error('Uncaught Exception:', error);
@@ -26,8 +26,13 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
+=======
+app.use(cors());
+>>>>>>> d756bf6e02cc61c29851f813be5bb5671d5aac8d
 app.use(express.json());
+app.use(express.static('public'));
 
+<<<<<<< HEAD
 // MongoDB bağlantı durumu kontrolü
 let isConnected = false;
 
@@ -120,9 +125,44 @@ app.post('/api/score', async (req, res) => {
     } catch (error) {
         console.error('Score güncelleme hatası:', error);
         res.status(500).json({ error: 'Sunucu hatası' });
+=======
+const SCORES_FILE = path.join(__dirname, 'data', 'scores.json');
+
+// Skorları oku
+function readScores() {
+    try {
+        const data = fs.readFileSync(SCORES_FILE, 'utf8');
+        return JSON.parse(data).scores;
+    } catch (error) {
+        return [];
     }
+}
+
+// Skorları kaydet
+function writeScores(scores) {
+    fs.writeFileSync(SCORES_FILE, JSON.stringify({ scores }, null, 2));
+}
+
+// Yeni oyuncu/skor kaydet
+app.post('/api/login', (req, res) => {
+    const { nickname } = req.body;
+    const scores = readScores();
+    const player = scores.find(p => p.nickname === nickname) || {
+        nickname,
+        highScore: 0,
+        lastPlayed: new Date()
+    };
+    
+    if (!scores.find(p => p.nickname === nickname)) {
+        scores.push(player);
+        writeScores(scores);
+>>>>>>> d756bf6e02cc61c29851f813be5bb5671d5aac8d
+    }
+    
+    res.json(player);
 });
 
+<<<<<<< HEAD
 app.get('/api/leaderboard', async (req, res) => {
     try {
         const scores = await Score.find()
@@ -166,6 +206,33 @@ app.use((err, req, res, next) => {
 // Port ayarı
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
+=======
+// Skor güncelle
+app.post('/api/score', (req, res) => {
+    const { nickname, score } = req.body;
+    const scores = readScores();
+    const player = scores.find(p => p.nickname === nickname);
+    
+    if (player && score > player.highScore) {
+        player.highScore = score;
+        player.lastPlayed = new Date();
+        writeScores(scores);
+    }
+    
+    res.json(player);
+});
+
+// Liderlik tablosu
+app.get('/api/leaderboard', (req, res) => {
+    const scores = readScores()
+        .sort((a, b) => b.highScore - a.highScore)
+        .slice(0, 10);
+    res.json(scores);
+});
+
+const PORT = 3000;
+app.listen(PORT, () => {
+>>>>>>> d756bf6e02cc61c29851f813be5bb5671d5aac8d
     console.log(`Server running on port ${PORT}`);
 });
 
