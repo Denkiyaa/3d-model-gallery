@@ -30,8 +30,8 @@ const ScoreSchema = new mongoose.Schema({
 
 const Score = mongoose.model('Score', ScoreSchema);
 
-// MongoDB bağlantısı - Sunucudaki MongoDB'ye bağlan
-const MONGODB_URI = 'mongodb://denkiya:1327@localhost:27017/gamedb?authSource=gamedb';
+// MongoDB bağlantısı
+const MONGODB_URI = 'mongodb://denkiya:1327@37.60.242.70:27017/gamedb?authSource=gamedb';
 
 console.log('MongoDB bağlantısı başlatılıyor...');
 
@@ -41,27 +41,11 @@ let isConnected = false;
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000,
-    connectTimeoutMS: 10000,
-    socketTimeoutMS: 45000,
-    family: 4
+    serverSelectionTimeoutMS: 5000
 }).then(() => {
-    isConnected = true;
     console.log('MongoDB bağlantısı başarılı');
-    
-    // Test bağlantısı
-    return Score.findOne().exec();
-}).then(result => {
-    console.log('Test sorgusu sonucu:', result ? 'Veri var' : 'Veri yok');
 }).catch((err) => {
-    isConnected = false;
-    console.error('MongoDB bağlantı hatası:', {
-        message: err.message,
-        code: err.code,
-        name: err.name,
-        stack: err.stack,
-        state: mongoose.connection.readyState
-    });
+    console.error('MongoDB bağlantı hatası:', err);
 });
 
 // Bağlantı durumunu izle
