@@ -6,17 +6,24 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const app = express();
 
-// CORS ayarları
+// CORS ayarları - daha geniş izinler
 app.use(cors({
-    origin: [
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-        'https://craftedfromfilament.com'
-    ],
+    origin: '*',  // Tüm originlere izin ver
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
     credentials: true
 }));
 
 app.use(express.json());
+
+// Manifest ve favicon için özel route'lar
+app.get('/manifest.json', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'manifest.json'));
+});
+
+app.get('/favicon.ico', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'favicon.ico'));
+});
 
 // MongoDB Şema
 const ScoreSchema = new mongoose.Schema({
@@ -27,22 +34,40 @@ const ScoreSchema = new mongoose.Schema({
 
 const Score = mongoose.model('Score', ScoreSchema);
 
-// MongoDB bağlantısı - Geliştirme ortamı için farklı URI kullan
-const MONGODB_URI = process.env.NODE_ENV === 'production' 
-    ? 'mongodb://denkiya:1327@localhost:27017/gamedb?authSource=gamedb'
-    : 'mongodb://localhost:27017/gamedb';
+// MongoDB bağlantısı
+const MONGODB_URI = 'mongodb://denkiya:1327@localhost:27017/gamedb?authSource=gamedb';
 
 console.log('MongoDB bağlantısı başlatılıyor...');
 console.log('Bağlantı URI:', MONGODB_URI);
 
 mongoose.connect(MONGODB_URI, {
-    family: 4
+    family: 4,
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 10000,
+    socketTimeoutMS: 45000
 }).then(() => {
     console.log('MongoDB bağlantısı başarılı');
+    // Test sorgusu
+    return Score.findOne().exec();
+}).then(result => {
+    console.log('Test sorgusu sonucu:', result ? 'Veri var' : 'Veri yok');
 }).catch((err) => {
-    console.error('MongoDB bağlantı hatası:', err);
-    // Bağlantı başarısız olursa dosya tabanlı sisteme geç
+    console.error('MongoDB bağlantı hatası:', {
+        message: err.message,
+        code: err.code,
+        name: err.name,
+        state: mongoose.connection.readyState
+    });
     console.log('Dosya tabanlı sisteme geçiliyor...');
+});
+
+// MongoDB bağlantı durumunu izle
+mongoose.connection.on('error', (err) => {
+    console.error('MongoDB bağlantı hatası:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+    console.log('MongoDB bağlantısı kesildi');
 });
 
 // Dosya tabanlı yedek sistem
@@ -151,8 +176,14 @@ app.get('/api/leaderboard', async (req, res) => {
     }
 });
 
-// Statik dosyalar
+// Statik dosyalar - sıralama önemli
+app.use('/game', express.static(path.join(__dirname, 'public/game')));
 app.use(express.static('public'));
+
+// Catch-all route
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
