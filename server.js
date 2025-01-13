@@ -35,7 +35,7 @@ const ScoreSchema = new mongoose.Schema({
 const Score = mongoose.model('Score', ScoreSchema);
 
 // MongoDB bağlantısı
-const MONGODB_URI = 'mongodb://denkiya:1327@37.60.242.70/gamedb?authSource=gamedb';
+const MONGODB_URI = 'mongodb://denkiya:1327@37.60.242.70:27017/gamedb?authSource=gamedb';
 
 console.log('MongoDB bağlantısı başlatılıyor...');
 console.log('Bağlantı URI:', MONGODB_URI);
