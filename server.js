@@ -6,18 +6,39 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const app = express();
 
-// CORS ayarları - daha geniş izinler
+// CORS ayarları
 app.use(cors({
-    origin: '*',  // Tüm originlere izin ver
+    origin: [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'https://craftedfromfilament.com',
+        'http://craftedfromfilament.com'
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
-    credentials: true
+    exposedHeaders: ['Access-Control-Allow-Origin'],
+    credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204
 }));
+
+// CORS Pre-flight için OPTIONS request handler
+app.options('*', cors());
+
+// Her request için CORS header'larını ekle
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    next();
+});
 
 app.use(express.json());
 
 // Manifest ve favicon için özel route'lar
-app.get('/manifest.json', (req, res) => {
+app.get('/manifest.json', cors(), (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
     res.sendFile(path.join(__dirname, 'public', 'manifest.json'));
 });
 
