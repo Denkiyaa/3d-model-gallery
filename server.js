@@ -26,6 +26,8 @@ function writeScores(scores) {
     fs.writeFileSync(SCORES_FILE, JSON.stringify({ scores }, null, 2));
 }
 
+
+
 // Yeni oyuncu/skor kaydet
 app.post('/api/login', (req, res) => {
     const { nickname } = req.body;
