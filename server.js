@@ -6,25 +6,35 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const app = express();
 
+// Global hata yakalama
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (error) => {
+    console.error('Unhandled Rejection:', error);
+});
+
+// CORS ayarları
 app.use(cors({
     origin: [
         'http://localhost:3000',
-        'http://localhost:4000',
-        'http://localhost:5000',
-        'http://127.0.0.1:4000',
-        'null',  // file:// protokolü için
+        'http://127.0.0.1:3000',
         'https://craftedfromfilament.com'
     ],
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
+
 app.use(express.json());
 
-// Skor şeması
+// MongoDB bağlantı durumu kontrolü
+let isConnected = false;
+
+// MongoDB Şema
 const ScoreSchema = new mongoose.Schema({
     nickname: { type: String, required: true },
-    highScore: { type: Number, required: true },
+    highScore: { type: Number, required: true, default: 0 },
     lastPlayed: { type: Date, default: Date.now }
 }, { collection: 'scores' });
 
@@ -35,17 +45,21 @@ const MONGODB_URI = 'mongodb://denkiya:1327@37.60.242.70:27017/gamedb?authSource
 
 console.log('MongoDB bağlantısı başlatılıyor...');
 
-// Bağlantı durumunu global olarak takip et
-let isConnected = false;
-
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000
+    serverSelectionTimeoutMS: 5000,
+    family: 4
 }).then(() => {
+    isConnected = true;
     console.log('MongoDB bağlantısı başarılı');
 }).catch((err) => {
-    console.error('MongoDB bağlantı hatası:', err);
+    isConnected = false;
+    console.error('MongoDB bağlantı hatası:', {
+        message: err.message,
+        code: err.code,
+        name: err.name
+    });
 });
 
 // Bağlantı durumunu izle
