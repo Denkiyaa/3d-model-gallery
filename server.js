@@ -59,9 +59,14 @@ mongoose.connect(MONGODB_URI, {
     connectTimeoutMS: 15000,
     socketTimeoutMS: 45000,
     useNewUrlParser: true,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
+    directConnection: true  // Direkt sunucuya bağlan
 }).then(() => {
     console.log('MongoDB bağlantısı başarılı');
+    // Bağlantıyı test et
+    return mongoose.connection.db.admin().ping();
+}).then(() => {
+    console.log('MongoDB ping başarılı');
 }).catch((err) => {
     console.error('MongoDB bağlantı hatası:', {
         message: err.message,
