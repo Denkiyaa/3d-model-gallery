@@ -50,22 +50,39 @@ const Score = mongoose.model('Score', ScoreSchema);
 const MONGODB_URI = 'mongodb://denkiya:1327@37.60.242.70:27017/gamedb?authSource=gamedb';
 
 console.log('MongoDB bağlantısı başlatılıyor...');
+console.log('Bağlantı URI:', MONGODB_URI);
 
 mongoose.connect(MONGODB_URI, {
     family: 4,
-    serverSelectionTimeoutMS: 5000
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 10000
 }).then(() => {
     console.log('MongoDB bağlantısı başarılı');
-    // Test sorgusu ekleyelim
+    // Test sorgusu yapalım
     return Score.findOne().exec();
 }).then(result => {
-    console.log('Test sorgusu sonucu:', result ? 'Veri var' : 'Veri yok');
+    console.log('Test sorgusu sonucu:', result);
+    console.log('Bağlantı durumu:', mongoose.connection.readyState);
 }).catch((err) => {
     console.error('MongoDB bağlantı hatası:', {
         message: err.message,
         code: err.code,
-        name: err.name
+        name: err.name,
+        state: mongoose.connection.readyState
     });
+});
+
+// Bağlantı durumunu izle
+mongoose.connection.on('connected', () => {
+    console.log('MongoDB bağlandı');
+});
+
+mongoose.connection.on('error', (err) => {
+    console.error('MongoDB bağlantı hatası:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+    console.log('MongoDB bağlantısı kesildi');
 });
 
 // API routes önce gelmeli
