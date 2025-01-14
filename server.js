@@ -219,31 +219,27 @@ app.get('/api/leaderboard', async (req, res) => {
     }
 });
 
-// Serve static files from the public folder
-app.use(express.static(path.join(__dirname, 'public')));
+// Statik dosyalar için route'lar
+app.use('/game', express.static(path.join(__dirname, 'public/game')));
+app.use(express.static('public'));
 
-// Endpoint to dynamically get the list of STL model files
-app.get('/models-list', (req, res) => {
-    const modelsDir = path.join(__dirname, 'public', 'models');
-    // ... existing code ...
-});
-
-// Specific route for the game
-app.get('/game', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'game', 'index.html'));
-});
-
-// Route for the main page
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Wildcard route should come last
+// Catch-all route - en sonda olmalı
 app.get('*', (req, res) => {
-    res.redirect('/'); // Redirect unknown routes to home page
+    // API istekleri için 404
+    if (req.path.startsWith('/api/')) {
+        return res.status(404).json({ error: 'API endpoint bulunamadı' });
+    }
+    
+    // Game sayfası için
+    if (req.path.startsWith('/game/')) {
+        return res.sendFile(path.join(__dirname, 'public/game/index.html'));
+    }
+    
+    // Ana sayfa için
+    res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
