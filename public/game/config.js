@@ -1,5 +1,6 @@
-// Oyun sabitleri ve konfigürasyonu
+// Oyun sabitleri ve konfigürasyonu - v1.1
 export const GAME_CONFIG = {
+    VERSION: '1.1', // Versiyon kontrolü için
     CANVAS_PADDING: 20,
     CASTLE_X: 50,
     CASTLE_WIDTH: 100,
@@ -107,6 +108,9 @@ export const GAME_CONFIG = {
         }
     }
 };
+
+console.log('Game Config Version:', GAME_CONFIG.VERSION);
+console.log('Enemy Base Speed:', GAME_CONFIG.ENEMY.BASE_SPEED);
 
 // Geriye uyumluluk için ayrı exportlar
 export const PLAYER_CONFIG = GAME_CONFIG.PLAYER;
