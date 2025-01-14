@@ -9,6 +9,12 @@ export class WaveManager {
         this.enemiesRemaining = this.calculateEnemyCount();
         this.isSpawning = true;
         
+        console.log('WaveManager initialized:', {
+            currentWave: this.currentWave,
+            enemiesRemaining: this.enemiesRemaining,
+            isSpawning: this.isSpawning
+        });
+        
         this.waveStatus = document.getElementById('waveStatus');
         this.updateWaveDisplay();
         this.spawnEnemy();
@@ -16,16 +22,17 @@ export class WaveManager {
 
     calculateEnemyCount() {
         const isBossWave = this.currentWave % 5 === 0;
-        if (isBossWave) {
-            return 1; // Boss wave'de sadece 1 düşman
-        }
+        const enemyCount = isBossWave ? 1 : 
+            GAME_CONFIG.WAVE.INITIAL_ENEMIES + 
+            Math.floor((this.currentWave - 1) / 5) * GAME_CONFIG.WAVE.ENEMIES_INCREMENT;
         
-        // Her boss wave sonrası düşman sayısı artar
-        const bossWavesPassed = Math.floor((this.currentWave - 1) / 5);
-        const baseEnemyCount = 5;
-        const enemyIncrease = bossWavesPassed * 2; // Her boss sonrası 2 düşman daha
+        console.log('Calculated enemy count:', {
+            wave: this.currentWave,
+            isBossWave,
+            enemyCount
+        });
         
-        return baseEnemyCount + enemyIncrease;
+        return enemyCount;
     }
 
     calculateDifficulty() {
@@ -107,7 +114,14 @@ export class WaveManager {
     }
 
     spawnEnemy() {
+        console.log('Attempting to spawn enemy:', {
+            enemiesRemaining: this.enemiesRemaining,
+            isSpawning: this.isSpawning,
+            currentWave: this.currentWave
+        });
+
         if (this.enemiesRemaining <= 0) {
+            console.log('No enemies remaining, stopping spawn');
             this.isSpawning = false;
             return;
         }
@@ -115,20 +129,12 @@ export class WaveManager {
         const enemy = new Enemy(this.game.canvas, this.currentWave);
         const difficulty = this.calculateDifficulty();
         
-        console.log('Before difficulty multiplier - Enemy Speed:', enemy.speedX);
-        
         if (this.currentWave % 5 === 0) {
-            // Boss özellikleri Enemy sınıfında ayarlanıyor
+            console.log('Spawning boss');
             this.enemiesRemaining = 0;
         } else {
-            // Normal düşmanların hızını ve canını artır
-            const oldSpeed = enemy.speedX;
+            console.log('Spawning normal enemy');
             enemy.speedX *= difficulty.speed;
-            console.log('After difficulty multiplier:', {
-                oldSpeed,
-                difficultySpeed: difficulty.speed,
-                newSpeed: enemy.speedX
-            });
             enemy.health *= difficulty.health;
             enemy.maxHealth = enemy.health;
         }
@@ -136,8 +142,19 @@ export class WaveManager {
         this.game.enemies.push(enemy);
         this.enemiesRemaining--;
         
+        const spawnInterval = Math.max(
+            1000,
+            GAME_CONFIG.WAVE.SPAWN_INTERVAL - (this.currentWave * GAME_CONFIG.WAVE.SPAWN_INTERVAL_DECREASE)
+        );
+        
+        console.log('Enemy spawned:', {
+            remainingEnemies: this.enemiesRemaining,
+            nextSpawnIn: spawnInterval,
+            enemySpeed: enemy.speedX
+        });
+        
         if (this.enemiesRemaining > 0) {
-            setTimeout(() => this.spawnEnemy(), GAME_CONFIG.SPAWN_DELAY);
+            setTimeout(() => this.spawnEnemy(), spawnInterval);
         } else {
             this.isSpawning = false;
         }

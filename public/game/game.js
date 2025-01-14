@@ -224,16 +224,24 @@ export class Game {
     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Çevre elemanlarını çiz
+        // Çizim sırası önemli - arkadan öne doğru çizmeliyiz
+        
+        // 1. Önce arkaplanı çiz
         this.environment.draw();
+        
+        // 2. Kaleyi çiz
         this.castle.draw(this.canvas.height * 0.95);
-
-        // Oyun objelerini çiz
-        this.player.draw(this.ctx);
+        
+        // 3. Düşmanları çiz
         this.enemies.forEach(enemy => enemy.draw(this.ctx));
+        
+        // 4. Okları çiz
         this.arrows.forEach(arrow => arrow.draw(this.ctx));
-
-        // Hasar yazılarını güncelle ve çiz
+        
+        // 5. Oyuncuyu çiz
+        this.player.draw(this.ctx);
+        
+        // 6. Hasar yazılarını çiz
         this.damageTexts = this.damageTexts.filter(text => {
             const isAlive = text.update();
             if (isAlive) {
