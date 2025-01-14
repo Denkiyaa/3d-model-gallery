@@ -19,7 +19,15 @@ app.use((req, res, next) => {
 
 // CORS ayarları
 app.use(cors({
-    origin: ['http://localhost:3000', 'https://craftedfromfilament.com'],
+    origin: function(origin, callback) {
+        const allowedOrigins = ['http://localhost:3000', 'https://craftedfromfilament.com'];
+        // origin olmayabilir (örn: Postman istekleri)
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('CORS policy violation'));
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
@@ -28,10 +36,10 @@ app.use(cors({
 // Pre-flight istekleri için
 app.options('*', cors());
 
-// Her istek için CORS header'larını kontrol et
+// Her istek için tek bir Origin header'ı
 app.use((req, res, next) => {
     const origin = req.headers.origin;
-    if (origin === 'http://localhost:3000') {
+    if (origin === 'http://localhost:3000' || origin === 'https://craftedfromfilament.com') {
         res.header('Access-Control-Allow-Origin', origin);
     }
     res.header('Access-Control-Allow-Credentials', 'true');

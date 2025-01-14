@@ -17,11 +17,16 @@ export class Enemy {
             // Boss özellikleri
             this.width *= GAME_CONFIG.ENEMY.BOSS_SIZE_MULTIPLIER;
             this.height *= GAME_CONFIG.ENEMY.BOSS_SIZE_MULTIPLIER;
-            this.health = GAME_CONFIG.ENEMY.BASE_HEALTH * GAME_CONFIG.ENEMY.BOSS_HEALTH_MULTIPLIER;
+            this.health = GAME_CONFIG.ENEMY.BASE_HEALTH * GAME_CONFIG.ENEMY.BOSS_HEALTH_MULTIPLIER * (1 + wave * 0.1);
             this.speedX = -baseSpeed * GAME_CONFIG.ENEMY.BOSS_SPEED_MULTIPLIER;
             this.damage = GAME_CONFIG.ENEMY.BASE_DAMAGE * GAME_CONFIG.ENEMY.BOSS_DAMAGE_MULTIPLIER;
             this.amplitude = GAME_CONFIG.ENEMY.BOSS.AMPLITUDE;
             this.frequency = GAME_CONFIG.ENEMY.BOSS.FREQUENCY;
+            
+            // Boss için ek kontroller
+            this.isDying = false;
+            this.deathAnimationFrame = 0;
+            this.maxDeathFrames = 30; // Ölüm animasyonu için frame sayısı
         } else {
             const sizeMultiplier = 1 + (wave * 0.1);
             this.health = GAME_CONFIG.ENEMY.BASE_HEALTH * sizeMultiplier;
@@ -42,32 +47,31 @@ export class Enemy {
     }
 
     draw(ctx) {
-        // Gölge
-        ctx.fillStyle = 'rgba(0,0,0,0.2)';
-        ctx.beginPath();
-        ctx.ellipse(
-            this.x + this.width/2,
-            this.y + this.height,
-            this.width * 0.6,
-            this.height * 0.2,
-            0, 0, Math.PI * 2
-        );
-        ctx.fill();
+        if (!this.isActive) return;
 
-        if (this.isBoss) {
+        // Boss ölüm animasyonu
+        if (this.isBoss && this.isDying) {
+            const opacity = 1 - (this.deathAnimationFrame / this.maxDeathFrames);
+            ctx.globalAlpha = opacity;
             this.drawBoss(ctx);
-        } else {
-            this.drawNormalEnemy(ctx);
+            ctx.globalAlpha = 1;
+            return;
         }
 
-        // Can barı arkaplanı
-        ctx.fillStyle = '#FF0000';
-        ctx.fillRect(this.x, this.y - 15, this.width, 8);
+        // Normal çizim
+        this.drawBoss(ctx);
         
-        // Mevcut can
-        const healthPercentage = Math.max(0, Math.min(1, this.health / this.maxHealth));
-        ctx.fillStyle = this.isBoss ? '#FFD700' : '#32CD32';
-        ctx.fillRect(this.x, this.y - 15, this.width * healthPercentage, 8);
+        // Can barı
+        if (this.health > 0) {
+            // Can barı arkaplanı
+            ctx.fillStyle = '#FF0000';
+            ctx.fillRect(this.x, this.y - 15, this.width, 8);
+            
+            // Mevcut can
+            const healthPercentage = Math.max(0, Math.min(1, this.health / this.maxHealth));
+            ctx.fillStyle = this.isBoss ? '#FFD700' : '#32CD32';
+            ctx.fillRect(this.x, this.y - 15, this.width * healthPercentage, 8);
+        }
     }
 
     drawNormalEnemy(ctx) {
@@ -154,11 +158,26 @@ export class Enemy {
 
     update() {
         if (!this.isActive) return;
+
+        if (this.isBoss && this.isDying) {
+            this.deathAnimationFrame++;
+            if (this.deathAnimationFrame >= this.maxDeathFrames) {
+                this.isActive = false;
+                return;
+            }
+        }
         
         this.x += this.speedX;
         this.time += this.isBoss ? 
             GAME_CONFIG.ENEMY.BOSS.WAVE_TIME_SPEED : 
             GAME_CONFIG.ENEMY.NORMAL.WAVE_TIME_SPEED;
         this.y = this.initialY + Math.sin(this.time) * this.amplitude;
+    }
+
+    startDeathAnimation() {
+        if (this.isBoss && !this.isDying) {
+            this.isDying = true;
+            this.deathAnimationFrame = 0;
+        }
     }
 } 
