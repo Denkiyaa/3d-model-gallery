@@ -6,33 +6,25 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const app = express();
 
+// Global hata yakalama
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (error) => {
+    console.error('Unhandled Rejection:', error);
+});
+
 // CORS ayarları
 app.use(cors({
     origin: [
         'http://localhost:3000',
         'http://127.0.0.1:3000',
-        'https://craftedfromfilament.com',
-        'http://craftedfromfilament.com'
+        'https://craftedfromfilament.com'
     ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
-    exposedHeaders: ['Access-Control-Allow-Origin'],
     credentials: true,
-    preflightContinue: false,
-    optionsSuccessStatus: 204
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
-
-// CORS Pre-flight için OPTIONS request handler
-app.options('*', cors());
-
-// Her request için CORS header'larını ekle
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    next();
-});
 
 app.use(express.json());
 
@@ -59,25 +51,18 @@ const Score = mongoose.model('Score', ScoreSchema);
 const MONGODB_URI = 'mongodb://denkiya:1327@37.60.242.70:27017/gamedb?authSource=gamedb';
 
 console.log('MongoDB bağlantısı başlatılıyor...');
-console.log('Bağlantı URI:', MONGODB_URI);
 
 mongoose.connect(MONGODB_URI, {
     family: 4,
     serverSelectionTimeoutMS: 5000,
-    connectTimeoutMS: 10000,
-    socketTimeoutMS: 45000
+    family: 4
 }).then(() => {
     console.log('MongoDB bağlantısı başarılı');
-    // Test sorgusu
-    return Score.findOne().exec();
-}).then(result => {
-    console.log('Test sorgusu sonucu:', result ? 'Veri var' : 'Veri yok');
 }).catch((err) => {
     console.error('MongoDB bağlantı hatası:', {
         message: err.message,
         code: err.code,
-        name: err.name,
-        state: mongoose.connection.readyState
+        name: err.name
     });
     console.log('Dosya tabanlı sisteme geçiliyor...');
 });
