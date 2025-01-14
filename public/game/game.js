@@ -34,7 +34,6 @@ export class Game {
         })
         .then(data => {
             console.log('Oyuncu kaydedildi:', data);
-            // Oyun başlatma işlemlerine devam et
             this.initializeGame();
         })
         .catch(error => {
@@ -305,12 +304,12 @@ export class Game {
         const waveStatus = document.getElementById('waveStatus');
         if (waveStatus) waveStatus.style.display = 'none';
 
-        // Skoru otomatik kaydet
-        const API_URL = 'https://craftedfromfilament.com/api/score';
-        fetch(API_URL, {
+        // Skoru kaydet
+        fetch(`${this.API_BASE_URL}/api/score`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify({
                 nickname: this.nickname,
