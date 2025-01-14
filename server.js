@@ -8,20 +8,22 @@ const app = express();
 
 // CORS ayarları
 app.use(cors({
-    origin: [
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-        'https://craftedfromfilament.com',
-        'http://craftedfromfilament.com'
-    ],
+    origin: ['http://localhost:3000', 'https://craftedfromfilament.com'],
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    methods: ['GET', 'POST', 'PUT', DELETE, 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
 }));
 
-// API route'ları için özel CORS middleware
-app.use('/api/*', (req, res, next) => {
-    res.header('Content-Type', 'application/json');
+// Pre-flight istekleri için
+app.options('*', cors());
+
+// Her istek için CORS header'larını kontrol et
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin === 'http://localhost:3000') {
+        res.header('Access-Control-Allow-Origin', origin);
+    }
+    res.header('Access-Control-Allow-Credentials', 'true');
     next();
 });
 
