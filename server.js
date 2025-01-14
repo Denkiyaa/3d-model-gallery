@@ -64,7 +64,9 @@ mongoose.connect(MONGODB_URI, {
     serverSelectionTimeoutMS: 10000,
     connectTimeoutMS: 15000,
     socketTimeoutMS: 45000,
-    directConnection: true
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    directConnection: true  // Direkt sunucuya bağlan
 }).then(() => {
     console.log('MongoDB bağlantısı başarılı');
     // Bağlantıyı test et
@@ -217,8 +219,8 @@ app.get('/api/leaderboard', async (req, res) => {
     }
 });
 
-// Statik dosyalar için route'lar - en üstte olmalı
-app.use(express.static(path.join(__dirname, 'build'))); // React build klasörü
+// Statik dosyalar için route'lar - sıralama önemli
+app.use('/', express.static(path.join(__dirname, 'build'))); // React build en üstte
 app.use('/game', express.static(path.join(__dirname, 'public/game')));
 app.use(express.static('public'));
 
@@ -230,12 +232,18 @@ app.get('*', (req, res) => {
     }
     
     // Game sayfası için
-    if (req.path.startsWith('/game/')) {
+    if (req.path.startsWith('/game')) {
         return res.sendFile(path.join(__dirname, 'public/game/index.html'));
     }
     
     // Ana sayfa için React build'i
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+    try {
+        res.sendFile(path.join(__dirname, 'build', 'index.html'));
+    } catch (err) {
+        console.error('Build dosyası bulunamadı:', err);
+        // Fallback olarak public/index.html'i kullan
+        res.sendFile(path.join(__dirname, 'public/index.html'));
+    }
 });
 
 // Hata yakalama middleware'i ekleyelim
