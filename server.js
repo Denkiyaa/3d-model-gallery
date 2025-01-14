@@ -6,25 +6,24 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const app = express();
 
-// Global hata yakalama
-process.on('uncaughtException', (error) => {
-    console.error('Uncaught Exception:', error);
-});
-
-process.on('unhandledRejection', (error) => {
-    console.error('Unhandled Rejection:', error);
-});
-
 // CORS ayarları
 app.use(cors({
     origin: [
         'http://localhost:3000',
         'http://127.0.0.1:3000',
-        'https://craftedfromfilament.com'
+        'https://craftedfromfilament.com',
+        'http://craftedfromfilament.com'
     ],
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// API route'ları için özel CORS middleware
+app.use('/api/*', (req, res, next) => {
+    res.header('Content-Type', 'application/json');
+    next();
+});
 
 app.use(express.json());
 
@@ -54,26 +53,30 @@ console.log('MongoDB bağlantısı başlatılıyor...');
 
 mongoose.connect(MONGODB_URI, {
     family: 4,
-    serverSelectionTimeoutMS: 5000,
-    family: 4
+    serverSelectionTimeoutMS: 5000
 }).then(() => {
     console.log('MongoDB bağlantısı başarılı');
+    // Test sorgusu ekleyelim
+    return Score.findOne().exec();
+}).then(result => {
+    console.log('Test sorgusu sonucu:', result ? 'Veri var' : 'Veri yok');
 }).catch((err) => {
     console.error('MongoDB bağlantı hatası:', {
         message: err.message,
         code: err.code,
         name: err.name
     });
-    console.log('Dosya tabanlı sisteme geçiliyor...');
 });
 
-// MongoDB bağlantı durumunu izle
-mongoose.connection.on('error', (err) => {
-    console.error('MongoDB bağlantı hatası:', err);
-});
-
-mongoose.connection.on('disconnected', () => {
-    console.log('MongoDB bağlantısı kesildi');
+// API routes önce gelmeli
+app.use('/api', (req, res, next) => {
+    if (mongoose.connection.readyState !== 1) {
+        return res.status(503).json({
+            error: 'Veritabanı bağlantısı aktif değil',
+            details: 'Lütfen daha sonra tekrar deneyin'
+        });
+    }
+    next();
 });
 
 // Dosya tabanlı yedek sistem
@@ -182,13 +185,24 @@ app.get('/api/leaderboard', async (req, res) => {
     }
 });
 
-// Statik dosyalar - sıralama önemli
+// Statik dosyalar için route'lar
 app.use('/game', express.static(path.join(__dirname, 'public/game')));
 app.use(express.static('public'));
 
-// Catch-all route
+// Catch-all route - en sonda olmalı
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    // API istekleri için 404
+    if (req.path.startsWith('/api/')) {
+        return res.status(404).json({ error: 'API endpoint bulunamadı' });
+    }
+    
+    // Game sayfası için
+    if (req.path.startsWith('/game/')) {
+        return res.sendFile(path.join(__dirname, 'public/game/index.html'));
+    }
+    
+    // Ana sayfa için
+    res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
