@@ -219,7 +219,8 @@ app.get('/api/leaderboard', async (req, res) => {
     }
 });
 
-// Statik dosyalar için route'lar
+// Statik dosyalar için route'lar - en üstte olmalı
+app.use(express.static(path.join(__dirname, 'build'))); // React build klasörü
 app.use('/game', express.static(path.join(__dirname, 'public/game')));
 app.use(express.static('public'));
 
@@ -235,8 +236,14 @@ app.get('*', (req, res) => {
         return res.sendFile(path.join(__dirname, 'public/game/index.html'));
     }
     
-    // Ana sayfa için
-    res.sendFile(path.join(__dirname, 'public/index.html'));
+    // Ana sayfa için React build'i
+    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
+
+// Hata yakalama middleware'i ekleyelim
+app.use((err, req, res, next) => {
+    console.error('Server error:', err);
+    res.status(500).send('Internal Server Error');
 });
 
 const PORT = process.env.PORT || 3000;
