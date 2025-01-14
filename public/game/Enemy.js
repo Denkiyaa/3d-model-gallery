@@ -31,7 +31,8 @@ export class Enemy {
             // Boss için ek kontroller
             this.isDying = false;
             this.deathAnimationFrame = 0;
-            this.maxDeathFrames = 30;
+            this.maxDeathFrames = 60; // 1 saniye
+            this.deathAnimationComplete = false;
             
             console.log('Boss Speed:', this.speedX);
         } else {
@@ -72,8 +73,7 @@ export class Enemy {
 
         // Boss ölüm animasyonu
         if (this.isBoss && this.isDying) {
-            const opacity = 1 - (this.deathAnimationFrame / this.maxDeathFrames);
-            ctx.globalAlpha = opacity;
+            ctx.globalAlpha = this.alpha;
             this.drawBoss(ctx);
             ctx.globalAlpha = 1;
             return;
@@ -202,9 +202,23 @@ export class Enemy {
     }
 
     startDeathAnimation() {
-        if (this.isBoss && !this.isDying) {
-            this.isDying = true;
-            this.deathAnimationFrame = 0;
+        this.isDying = true;
+        this.deathAnimationFrame = 0;
+        this.deathAnimationComplete = false;
+    }
+
+    updateDeathAnimation() {
+        if (this.isDying) {
+            this.deathAnimationFrame++;
+            
+            // Animasyon efektleri burada
+            this.width *= 0.95;  // Küçülme efekti
+            this.height *= 0.95;
+            this.alpha = 1 - (this.deathAnimationFrame / this.maxDeathFrames);
+
+            if (this.deathAnimationFrame >= this.maxDeathFrames) {
+                this.deathAnimationComplete = true;
+            }
         }
     }
 } 

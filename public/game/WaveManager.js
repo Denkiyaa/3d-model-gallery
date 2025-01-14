@@ -159,4 +159,11 @@ export class WaveManager {
             this.isSpawning = false;
         }
     }
+
+    onWaveComplete() {
+        if (!this.isSpawning && !this.game.cardSystem.isChoosingCard) {
+            console.log('Wave tamamlandı, kart seçimi gösteriliyor');
+            this.game.cardSystem.showCardSelection();
+        }
+    }
 } 

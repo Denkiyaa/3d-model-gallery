@@ -126,14 +126,26 @@ export class Game {
             if (enemy.health <= 0) {
                 if (enemy.isBoss) {
                     if (!enemy.isDying) {
+                        // Ölüm animasyonunu başlat
                         enemy.startDeathAnimation();
                         this.score += 50;
                         this.updateScore();
                     }
-                    if (enemy.deathAnimationFrame >= enemy.maxDeathFrames) {
+                    
+                    // Ölüm animasyonu devam ediyor
+                    enemy.updateDeathAnimation();
+                    
+                    // Animasyon bittiyse düşmanı kaldır
+                    if (enemy.deathAnimationComplete) {
                         this.enemies.splice(i, 1);
+                        
+                        // Wave tamamlandı mı kontrol et
+                        if (this.enemies.length === 0) {
+                            this.waveManager.onWaveComplete();
+                        }
                     }
                 } else {
+                    // Normal düşman ölümü
                     enemy.isActive = false;
                     this.enemies.splice(i, 1);
                     this.score += 10;
