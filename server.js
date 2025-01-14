@@ -55,16 +55,19 @@ console.log('MongoDB bağlantısı başlatılıyor...');
 
 mongoose.connect(MONGODB_URI, {
     family: 4,
-    serverSelectionTimeoutMS: 5000,
-    connectTimeoutMS: 10000,
-    socketTimeoutMS: 45000
+    serverSelectionTimeoutMS: 10000,
+    connectTimeoutMS: 15000,
+    socketTimeoutMS: 45000,
+    useNewUrlParser: true,
+    useUnifiedTopology: true
 }).then(() => {
     console.log('MongoDB bağlantısı başarılı');
 }).catch((err) => {
     console.error('MongoDB bağlantı hatası:', {
         message: err.message,
         code: err.code,
-        name: err.name
+        name: err.name,
+        stack: err.stack
     });
 });
 
@@ -82,18 +85,21 @@ mongoose.connection.on('disconnected', () => {
 });
 
 // API routes için middleware
-app.use('/api/*', (req, res, next) => {
-    // Content-Type'ı zorla
-    res.setHeader('Content-Type', 'application/json');
-    
-    // MongoDB bağlantı kontrolü
-    if (mongoose.connection.readyState !== 1) {
+app.use('/api/*', async (req, res, next) => {
+    try {
+        // MongoDB bağlantı durumunu kontrol et
+        if (mongoose.connection.readyState !== 1) {
+            // Yeniden bağlanmayı dene
+            await mongoose.connect(MONGODB_URI);
+        }
+        next();
+    } catch (error) {
+        console.error('API isteği sırasında MongoDB hatası:', error);
         return res.status(503).json({
             error: 'Veritabanı bağlantısı aktif değil',
-            details: 'Lütfen daha sonra tekrar deneyin'
+            details: error.message
         });
     }
-    next();
 });
 
 // Dosya tabanlı yedek sistem

@@ -389,7 +389,7 @@ span {
 
 .scroll-decoration {
     height: 20px;
-    background: url('path-to-scroll-decoration.png') center/contain no-repeat;
+    background: linear-gradient(90deg, transparent, #FFD700, transparent);
     margin: 10px 0;
 }
 
