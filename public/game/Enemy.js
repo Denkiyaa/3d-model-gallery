@@ -10,8 +10,13 @@ export class Enemy {
         // Boss wave kontrolü
         this.isBoss = wave % 5 === 0;
         
+        // Debug için hız hesaplama detayları
+        console.log('Wave:', wave);
+        console.log('Base Speed Config:', GAME_CONFIG.ENEMY.BASE_SPEED);
+        
         // Temel hız hesapla (wave'e göre artan)
         const baseSpeed = GAME_CONFIG.ENEMY.BASE_SPEED * (1 + wave * GAME_CONFIG.ENEMY.SPEED_INCREMENT);
+        console.log('Calculated Base Speed:', baseSpeed);
         
         if (this.isBoss) {
             // Boss özellikleri
@@ -19,25 +24,12 @@ export class Enemy {
             this.height *= GAME_CONFIG.ENEMY.BOSS_SIZE_MULTIPLIER;
             this.health = GAME_CONFIG.ENEMY.BASE_HEALTH * GAME_CONFIG.ENEMY.BOSS_HEALTH_MULTIPLIER * (1 + wave * 0.1);
             this.speedX = -baseSpeed * GAME_CONFIG.ENEMY.BOSS_SPEED_MULTIPLIER;
-            this.damage = GAME_CONFIG.ENEMY.BASE_DAMAGE * GAME_CONFIG.ENEMY.BOSS_DAMAGE_MULTIPLIER;
-            this.amplitude = GAME_CONFIG.ENEMY.BOSS.AMPLITUDE;
-            this.frequency = GAME_CONFIG.ENEMY.BOSS.FREQUENCY;
-            
-            // Boss için ek kontroller
-            this.isDying = false;
-            this.deathAnimationFrame = 0;
-            this.maxDeathFrames = 30; // Ölüm animasyonu için frame sayısı
+            console.log('Boss Speed:', this.speedX);
         } else {
             const sizeMultiplier = 1 + (wave * 0.1);
             this.health = GAME_CONFIG.ENEMY.BASE_HEALTH * sizeMultiplier;
-            this.speedX = -baseSpeed;
-            this.damage = GAME_CONFIG.ENEMY.BASE_DAMAGE * sizeMultiplier;
-            this.amplitude = Math.random() * 
-                (GAME_CONFIG.ENEMY.NORMAL.AMPLITUDE.MAX - GAME_CONFIG.ENEMY.NORMAL.AMPLITUDE.MIN) + 
-                GAME_CONFIG.ENEMY.NORMAL.AMPLITUDE.MIN;
-            this.frequency = Math.random() * 
-                (GAME_CONFIG.ENEMY.NORMAL.FREQUENCY.MAX - GAME_CONFIG.ENEMY.NORMAL.FREQUENCY.MIN) + 
-                GAME_CONFIG.ENEMY.NORMAL.FREQUENCY.MIN;
+            this.speedX = -baseSpeed;  // Burada direkt atama yapılıyor
+            console.log('Normal Enemy Speed:', this.speedX);
         }
         
         this.maxHealth = this.health;

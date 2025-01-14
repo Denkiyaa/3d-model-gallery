@@ -35,12 +35,15 @@ export class WaveManager {
         // Hız artışı (her boss sonrası %20, maksimum %100)
         const speedMultiplier = 1 + Math.min(1, bossWavesPassed * 0.2);
         
-        // Can artışı (her boss sonrası %30, maksimum %200)
-        const healthMultiplier = 1 + Math.min(2, bossWavesPassed * 0.3);
+        console.log('Difficulty calculation:', {
+            wave: this.currentWave,
+            bossWavesPassed,
+            speedMultiplier
+        });
         
         return {
             speed: speedMultiplier,
-            health: healthMultiplier
+            health: 1 + Math.min(2, bossWavesPassed * 0.3)
         };
     }
 
@@ -112,12 +115,20 @@ export class WaveManager {
         const enemy = new Enemy(this.game.canvas, this.currentWave);
         const difficulty = this.calculateDifficulty();
         
+        console.log('Before difficulty multiplier - Enemy Speed:', enemy.speedX);
+        
         if (this.currentWave % 5 === 0) {
             // Boss özellikleri Enemy sınıfında ayarlanıyor
-            this.enemiesRemaining = 0; // Boss geldiğinde başka düşman gelmesin
+            this.enemiesRemaining = 0;
         } else {
             // Normal düşmanların hızını ve canını artır
+            const oldSpeed = enemy.speedX;
             enemy.speedX *= difficulty.speed;
+            console.log('After difficulty multiplier:', {
+                oldSpeed,
+                difficultySpeed: difficulty.speed,
+                newSpeed: enemy.speedX
+            });
             enemy.health *= difficulty.health;
             enemy.maxHealth = enemy.health;
         }
