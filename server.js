@@ -6,11 +6,22 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const app = express();
 
+// Express ayarları
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Karakter kodlaması için
+app.use((req, res, next) => {
+    res.charset = 'utf-8';
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    next();
+});
+
 // CORS ayarları
 app.use(cors({
     origin: ['http://localhost:3000', 'https://craftedfromfilament.com'],
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', DELETE, 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With']
 }));
 
@@ -26,8 +37,6 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Credentials', 'true');
     next();
 });
-
-app.use(express.json());
 
 // Manifest ve favicon için özel route'lar
 app.get('/manifest.json', cors(), (req, res) => {
