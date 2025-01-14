@@ -52,25 +52,19 @@ const Score = mongoose.model('Score', ScoreSchema);
 const MONGODB_URI = 'mongodb://denkiya:1327@37.60.242.70:27017/gamedb?authSource=gamedb';
 
 console.log('MongoDB bağlantısı başlatılıyor...');
-console.log('Bağlantı URI:', MONGODB_URI);
 
 mongoose.connect(MONGODB_URI, {
     family: 4,
     serverSelectionTimeoutMS: 5000,
-    connectTimeoutMS: 10000
+    connectTimeoutMS: 10000,
+    socketTimeoutMS: 45000
 }).then(() => {
     console.log('MongoDB bağlantısı başarılı');
-    // Test sorgusu yapalım
-    return Score.findOne().exec();
-}).then(result => {
-    console.log('Test sorgusu sonucu:', result);
-    console.log('Bağlantı durumu:', mongoose.connection.readyState);
 }).catch((err) => {
     console.error('MongoDB bağlantı hatası:', {
         message: err.message,
         code: err.code,
-        name: err.name,
-        state: mongoose.connection.readyState
+        name: err.name
     });
 });
 
@@ -87,8 +81,12 @@ mongoose.connection.on('disconnected', () => {
     console.log('MongoDB bağlantısı kesildi');
 });
 
-// API routes önce gelmeli
-app.use('/api', (req, res, next) => {
+// API routes için middleware
+app.use('/api/*', (req, res, next) => {
+    // Content-Type'ı zorla
+    res.setHeader('Content-Type', 'application/json');
+    
+    // MongoDB bağlantı kontrolü
     if (mongoose.connection.readyState !== 1) {
         return res.status(503).json({
             error: 'Veritabanı bağlantısı aktif değil',
