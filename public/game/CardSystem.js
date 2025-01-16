@@ -67,25 +67,20 @@ export class CardSystem {
         
         let selectedTypes;
         if (isBossWave) {
-            // Boss wave'de multiShot kartı kesin gelsin, yanına 2 tane random kart
             selectedTypes = ['multiShot'];
             const otherTypes = cardTypes.filter(type => type !== 'multiShot');
             const additionalTypes = this.shuffleArray(otherTypes).slice(0, 2);
             selectedTypes.push(...additionalTypes);
         } else {
-            // Normal wave'lerde multiShot kartı gelmesin
             const availableTypes = cardTypes.filter(type => type !== 'multiShot');
             selectedTypes = this.shuffleArray(availableTypes).slice(0, 3);
         }
         
         const selectedCards = selectedTypes.map(type => {
             const cards = this.cardPool[type];
-            
-            // Rarity seçimi için random sayı
             const rand = Math.random();
             let selectedRarity;
             
-            // Boss wave'de daha iyi kartlar gelsin
             if (isBossWave) {
                 if (rand < 0.40) selectedRarity = 'common';
                 else if (rand < 0.75) selectedRarity = 'rare';
@@ -98,50 +93,55 @@ export class CardSystem {
                 else selectedRarity = 'legendary';
             }
 
-            // Seçilen rarity'deki kartları filtrele
             const cardsOfRarity = cards.filter(card => card.rarity === selectedRarity);
-            
-            // Eğer o rarity'de kart yoksa, bir alt rarity'ye düş
             let availableCards = cardsOfRarity;
+            
             if (cardsOfRarity.length === 0) {
-                if (selectedRarity === 'legendary') selectedRarity = 'epic';
-                else if (selectedRarity === 'epic') selectedRarity = 'rare';
-                else selectedRarity = 'common';
-                
-                availableCards = cards.filter(card => card.rarity === selectedRarity);
+                selectedRarity = 'common';
+                availableCards = cards.filter(card => card.rarity === 'common');
             }
 
-            // Kartlardan birini rastgele seç
             const card = availableCards[Math.floor(Math.random() * availableCards.length)];
             return { ...card, type };
         });
 
-        // Boss wave başlığını özelleştir
-        const waveTitle = isBossWave ? 'Boss Wave Completed!' : 'Wave Completed!';
-        const waveClass = isBossWave ? 'boss-wave' : '';
-        
         const cardSelection = document.createElement('div');
         cardSelection.className = 'card-selection';
+        cardSelection.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+            z-index: 1000;
+        `;
+        
         cardSelection.innerHTML = `
-            <h2>${waveTitle}</h2>
+            <h2>${isBossWave ? 'Boss Wave Completed!' : 'Wave Completed!'}</h2>
             <h3>Choose Your Upgrade</h3>
-            <div class="cards ${waveClass}">
+            <div class="cards">
                 ${selectedCards.map(card => `
-                    <div class="card ${card.rarity || 'common'}" style="cursor: pointer;">
-                        <div class="rarity-label">${(card.rarity || 'common').toUpperCase()}</div>
-                        <div class="card-icon">
-                            ${this.CARD_ICONS[card.type]}
-                        </div>
+                    <div class="card ${card.rarity}" style="cursor: pointer;">
+                        <div class="card-icon">${this.CARD_ICONS[card.type]}</div>
                         <h4>${card.name}</h4>
                         <p>${card.description}</p>
                     </div>
                 `).join('')}
             </div>
         `;
-        
+
         const cards = cardSelection.querySelectorAll('.card');
         cards.forEach((cardElement, index) => {
-            cardElement.addEventListener('click', () => this.selectCard(selectedCards[index]));
+            cardElement.addEventListener('click', () => {
+                this.selectCard(selectedCards[index]);
+                cardSelection.remove();
+                this.isChoosingCard = false;
+                this.game.waveManager.startNewWave();
+            });
         });
         
         document.body.appendChild(cardSelection);

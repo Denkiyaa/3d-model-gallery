@@ -90,30 +90,25 @@ export class Game {
     }
 
     update() {
-        if (this.isGameOver) return; // Oyun bittiyse güncelleme yapma
-        
+        if (this.isGameOver) return;
         if (this.cardSystem.isChoosingCard) return;
         
         // Update player
         this.player.update();
         
-        // Update enemies and check collisions
+        // Update enemies
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
             
-            // Düşman kaleye ulaştı mı?
             if (enemy.x <= GAME_CONFIG.CASTLE_X + GAME_CONFIG.CASTLE_WIDTH) {
                 this.currentHealth -= enemy.damage;
-                enemy.isActive = false;
-                this.enemies.splice(i, 1); // Düşmanı listeden kaldır
+                this.enemies.splice(i, 1);
                 this.updateHealthBar();
                 continue;
             }
 
-            // Düşman öldü mü?
             if (enemy.health <= 0) {
-                enemy.isActive = false;
-                this.enemies.splice(i, 1); // Düşmanı listeden kaldır
+                this.enemies.splice(i, 1);
                 this.score += enemy.isBoss ? 100 : 10;
                 this.updateScore();
                 continue;
@@ -125,19 +120,10 @@ export class Game {
         // Update arrows
         for (let i = this.arrows.length - 1; i >= 0; i--) {
             const arrow = this.arrows[i];
-            
-            // Ok aktif değilse kaldır
-            if (!arrow.isActive) {
-                this.arrows.splice(i, 1);
-                continue;
-            }
-            
             arrow.update();
             
             // Ok çarptı mı kontrol et
             for (const enemy of this.enemies) {
-                if (!enemy.isActive) continue;
-                
                 if (this.checkCollision(arrow, enemy)) {
                     // Kritik vuruş kontrolü
                     const isCritical = Math.random() < (this.player.criticalChance || 0);
@@ -155,7 +141,7 @@ export class Game {
                         isCritical
                     ));
                     
-                    arrow.isActive = false;
+                    this.arrows.splice(i, 1);
                     break;
                 }
             }
