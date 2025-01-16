@@ -106,6 +106,48 @@ export const GAME_CONFIG = {
                 LEGENDARY: 2
             }
         }
+    },
+
+    // Para sistemi
+    CURRENCY: {
+        INITIAL: 100,
+        KILL_REWARD: {
+            NORMAL: 10,
+            BOSS: 100
+        },
+        WAVE_COMPLETION: 50
+    },
+
+    // Kart maliyetleri
+    CARD_COSTS: {
+        COMMON: 30,
+        RARE: 80,
+        EPIC: 150,
+        LEGENDARY: 300
+    },
+
+    // Ceza kartları
+    PENALTY_CARDS: {
+        ATTACK_SPEED_DECREASE: {
+            name: "Slow Curse",
+            description: "Attack speed decreased by 10%",
+            effect: { type: 'attackSpeed', value: 1.1 }
+        },
+        DAMAGE_DECREASE: {
+            name: "Weakness Curse",
+            description: "Damage decreased by 15%",
+            effect: { type: 'damage', value: 0.85 }
+        },
+        CRIT_CHANCE_DECREASE: {
+            name: "Unlucky Curse",
+            description: "Critical chance decreased by 5%",
+            effect: { type: 'criticalChance', value: -0.05 }
+        },
+        ARROW_SPEED_DECREASE: {
+            name: "Heavy Arrows",
+            description: "Arrow speed decreased by 20%",
+            effect: { type: 'arrowSpeed', value: 0.8 }
+        }
     }
 };
 

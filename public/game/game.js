@@ -42,6 +42,8 @@ export class Game {
         });
 
         this.damageTexts = [];  // Hasar yazılarını tutacak array
+        this.currency = GAME_CONFIG.CURRENCY.INITIAL;
+        this.isTransitioningWave = false;
     }
 
     initializeGame() {
@@ -67,14 +69,15 @@ export class Game {
         this.waveManager = new WaveManager(this);
         this.cardSystem = new CardSystem(this);
         
+        // UI'ı oluştur
+        this.createUI();
+        
         // İlk wave'i başlat
         this.waveManager.spawnEnemy();
         
         this.maxHealth = 100;
         this.currentHealth = this.maxHealth;
         this.damagePerEnemy = 10;
-        
-        this.createHealthBar();
         
         // Oyun nesnesini global olarak erişilebilir yap
         window.game = this;
@@ -109,8 +112,14 @@ export class Game {
 
             if (enemy.health <= 0) {
                 this.enemies.splice(i, 1);
-                this.score += enemy.isBoss ? 100 : 10;
+                // Boss ödüllerini artır
+                const isBoss = enemy.isBoss;
+                this.score += isBoss ? 100 : 10;
+                this.currency += isBoss ? 
+                    GAME_CONFIG.CURRENCY.KILL_REWARD.BOSS : 
+                    GAME_CONFIG.CURRENCY.KILL_REWARD.NORMAL;
                 this.updateScore();
+                this.updateCurrency();
                 continue;
             }
 
@@ -148,8 +157,16 @@ export class Game {
         }
 
         // Wave kontrolü
-        if (this.enemies.length === 0 && !this.waveManager.isSpawning) {
+        if (this.enemies.length === 0 && 
+            !this.waveManager.isSpawning && 
+            !this.cardSystem.isChoosingCard && 
+            !this.isTransitioningWave) {
+            
+            this.isTransitioningWave = true;
             this.waveManager.onWaveComplete();
+            setTimeout(() => {
+                this.isTransitioningWave = false;
+            }, 1000);
         }
 
         // Update damage texts
@@ -209,53 +226,22 @@ export class Game {
         this.ctx.fillText(`Score: ${this.score}`, 10, 60);
     }
 
-    createHealthBar() {
-        // Ana container
-        const healthContainer = document.createElement('div');
-        healthContainer.className = 'health-container';
-        
-        // Health label
-        const healthLabel = document.createElement('div');
-        healthLabel.className = 'health-label';
-        healthLabel.textContent = 'CASTLE HEALTH';
-        
-        // Health bar
-        const healthBar = document.createElement('div');
-        healthBar.className = 'health-bar';
-        
-        const healthFill = document.createElement('div');
-        healthFill.className = 'health-fill';
-        
-        // Score display
-        const scoreDisplay = document.createElement('div');
-        scoreDisplay.className = 'score-display';
-        scoreDisplay.textContent = `Score: ${this.score}`;
-        this.scoreDisplay = scoreDisplay; // Score'u güncelleyebilmek için referansı sakla
-        
-        // Elementleri birleştir
-        healthBar.appendChild(healthFill);
-        healthContainer.appendChild(healthLabel);
-        healthContainer.appendChild(healthBar);
-        healthContainer.appendChild(scoreDisplay);
-        document.body.appendChild(healthContainer);
-        
-        this.healthFill = healthFill;
-    }
-
     updateHealthBar() {
-        const percentage = (this.currentHealth / this.maxHealth) * 100;
-        this.healthFill.style.width = `${percentage}%`;
-        
-        if (this.currentHealth <= 0) {
-            // Game Over logic here
-            console.log('Game Over!');
+        const healthFill = document.querySelector('.health-fill');
+        if (healthFill) {
+            const percentage = (this.currentHealth / this.maxHealth) * 100;
+            healthFill.style.width = `${percentage}%`;
         }
     }
 
     // Score'u güncellemek için yeni metod
     updateScore() {
-        if (this.scoreDisplay) {
-            this.scoreDisplay.textContent = `Score: ${this.score}`;
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        if (scoreDisplay) {
+            scoreDisplay.innerHTML = `
+                <span class="icon"></span>
+                <span>${this.score}</span>
+            `;
         }
     }
 
@@ -325,6 +311,65 @@ export class Game {
                 window.location.reload();
             });
         });
+    }
+
+    updateCurrency() {
+        const currencyDisplay = document.getElementById('currencyDisplay');
+        if (currencyDisplay) {
+            currencyDisplay.innerHTML = `
+                <div>GOLD</div>
+                <div>${this.currency}</div>
+            `;
+        }
+    }
+
+    createUI() {
+        const statsContainer = document.createElement('div');
+        statsContainer.className = 'stats-container';
+
+        // Health Bar
+        const healthContainer = document.createElement('div');
+        healthContainer.className = 'health-container';
+        healthContainer.innerHTML = `
+            <div class="health-label">CASTLE HEALTH</div>
+            <div class="health-bar">
+                <div class="health-fill" style="width: 100%"></div>
+            </div>
+        `;
+
+        // Currency Display
+        const currencyDisplay = document.createElement('div');
+        currencyDisplay.id = 'currencyDisplay';
+        currencyDisplay.className = 'ui-element';
+        currencyDisplay.innerHTML = `
+            <div>GOLD</div>
+            <div>${this.currency}</div>
+        `;
+
+        // Wave Status
+        const waveStatus = document.createElement('div');
+        waveStatus.id = 'waveStatus';
+        waveStatus.className = 'ui-element';
+        waveStatus.innerHTML = `
+            <div>WAVE</div>
+            <div>${this.waveManager.currentWave}</div>
+        `;
+
+        // Score Display
+        const scoreDisplay = document.createElement('div');
+        scoreDisplay.id = 'scoreDisplay';
+        scoreDisplay.className = 'ui-element';
+        scoreDisplay.innerHTML = `
+            <div>SCORE</div>
+            <div><span class="icon"></span>${this.score}</div>
+        `;
+
+        statsContainer.appendChild(healthContainer);
+        statsContainer.appendChild(currencyDisplay);
+        statsContainer.appendChild(waveStatus);
+        statsContainer.appendChild(scoreDisplay);
+
+        document.body.appendChild(statsContainer);
     }
 }
 
