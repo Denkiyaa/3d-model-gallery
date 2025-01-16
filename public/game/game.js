@@ -103,126 +103,79 @@ export class Game {
             
             // Düşman kaleye ulaştı mı?
             if (enemy.x <= GAME_CONFIG.CASTLE_X + GAME_CONFIG.CASTLE_WIDTH) {
-                if (enemy.isBoss) {
-                    this.currentHealth -= enemy.damage;
-                    enemy.isActive = false;
-                } else {
-                    this.currentHealth -= enemy.damage;
-                    enemy.isActive = false;
-                }
-                this.enemies.splice(i, 1);
+                this.currentHealth -= enemy.damage;
+                enemy.isActive = false;
+                this.enemies.splice(i, 1); // Düşmanı listeden kaldır
                 this.updateHealthBar();
-                
-                if (this.currentHealth <= 0) {
-                    this.gameOver();
-                    return;
-                }
                 continue;
             }
-            
-            enemy.update();
-            
+
             // Düşman öldü mü?
             if (enemy.health <= 0) {
-                if (enemy.isBoss) {
-                    if (!enemy.isDying) {
-                        // Ölüm animasyonunu başlat
-                        enemy.startDeathAnimation();
-                        this.score += 50;
-                        this.updateScore();
-                    }
-                    
-                    // Ölüm animasyonu devam ediyor
-                    enemy.updateDeathAnimation();
-                    
-                    // Animasyon bittiyse düşmanı kaldır
-                    if (enemy.deathAnimationComplete) {
-                        this.enemies.splice(i, 1);
-                        
-                        // Wave tamamlandı mı kontrol et
-                        if (this.enemies.length === 0) {
-                            this.waveManager.onWaveComplete();
-                        }
-                    }
-                } else {
-                    // Normal düşman ölümü
-                    enemy.isActive = false;
-                    this.enemies.splice(i, 1);
-                    this.score += 10;
-                    this.updateScore();
-                }
+                enemy.isActive = false;
+                this.enemies.splice(i, 1); // Düşmanı listeden kaldır
+                this.score += enemy.isBoss ? 100 : 10;
+                this.updateScore();
                 continue;
             }
+
+            enemy.update();
         }
         
-        // Update arrows and check collisions
+        // Update arrows
         for (let i = this.arrows.length - 1; i >= 0; i--) {
             const arrow = this.arrows[i];
-            
-            // Ok ekrandan çıktı mı?
-            if (arrow.x > this.canvas.width || arrow.x < 0 || 
-                arrow.y > this.canvas.height || arrow.y < 0) {
-                this.arrows.splice(i, 1);
-                continue;
-            }
             
             // Ok aktif değilse kaldır
             if (!arrow.isActive) {
                 this.arrows.splice(i, 1);
                 continue;
             }
-
+            
             arrow.update();
             
-            // Hedef düşman ölmüşse veya artık oyunda değilse
-            if (arrow.target && !this.enemies.includes(arrow.target)) {
-                arrow.continueForward();
-                continue;
-            }
-            
-            // Ok düşmana çarptı mı?
-            if (arrow.target && this.checkCollision(arrow, arrow.target)) {
-                const isCritical = Math.random() < this.player.criticalChance;
-                const baseDamage = this.player.damage;
-                const critMultiplier = this.player.criticalDamage || GAME_CONFIG.PLAYER.INITIAL_CRIT_DAMAGE;
-                const damage = isCritical ? baseDamage * critMultiplier : baseDamage;
+            // Ok çarptı mı kontrol et
+            for (const enemy of this.enemies) {
+                if (!enemy.isActive) continue;
                 
-                // Hasar yazısı ekle
-                this.damageTexts.push(new DamageText(
-                    arrow.target.x + arrow.target.width / 2,
-                    arrow.target.y,
-                    Math.round(damage),
-                    isCritical
-                ));
-                
-                arrow.target.health -= damage;
-                arrow.isActive = false;
-                
-                // Düşman öldü mü kontrol et
-                if (arrow.target.health <= 0) {
-                    const enemyIndex = this.enemies.indexOf(arrow.target);
-                    if (enemyIndex !== -1) {
-                        this.enemies.splice(enemyIndex, 1);
-                        this.score += arrow.target.isBoss ? 50 : 10;
-                        this.updateScore();
-                    }
+                if (this.checkCollision(arrow, enemy)) {
+                    // Kritik vuruş kontrolü
+                    const isCritical = Math.random() < (this.player.criticalChance || 0);
+                    const damage = isCritical ? 
+                        this.player.damage * (this.player.criticalDamage || 1.5) : 
+                        this.player.damage;
+                    
+                    enemy.health -= damage;
+                    
+                    // Hasar yazısını ekle
+                    this.damageTexts.push(new DamageText(
+                        enemy.x + enemy.width / 2,
+                        enemy.y,
+                        Math.floor(damage),
+                        isCritical
+                    ));
+                    
+                    arrow.isActive = false;
+                    break;
                 }
             }
         }
-        
-        // Wave completion check with debug logs
-        if (this.enemies.length === 0) {
-            console.log('Düşman kalmadı');
-            console.log('isSpawning:', this.waveManager.isSpawning);
-            console.log('isChoosingCard:', this.cardSystem.isChoosingCard);
-            console.log('currentWave:', this.waveManager.currentWave);
-            
-            if (!this.waveManager.isSpawning && 
-                !this.cardSystem.isChoosingCard && 
-                this.waveManager.currentWave < 100) {
-                console.log('Kart seçim ekranı gösterilecek');
-                this.cardSystem.showCardSelection();
+
+        // Wave kontrolü
+        if (this.enemies.length === 0 && !this.waveManager.isSpawning) {
+            this.waveManager.onWaveComplete();
+        }
+
+        // Update damage texts
+        for (let i = this.damageTexts.length - 1; i >= 0; i--) {
+            if (!this.damageTexts[i].update()) {
+                this.damageTexts.splice(i, 1);
             }
+        }
+
+        // Game over kontrolü
+        if (this.currentHealth <= 0) {
+            this.gameOver();
         }
     }
 

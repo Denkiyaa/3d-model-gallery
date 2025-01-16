@@ -28,12 +28,6 @@ export class Enemy {
             this.amplitude = GAME_CONFIG.ENEMY.BOSS.AMPLITUDE;
             this.frequency = GAME_CONFIG.ENEMY.BOSS.FREQUENCY;
             
-            // Boss için ek kontroller
-            this.isDying = false;
-            this.deathAnimationFrame = 0;
-            this.maxDeathFrames = 60; // 1 saniye
-            this.deathAnimationComplete = false;
-            
             console.log('Boss Speed:', this.speedX);
         } else {
             const sizeMultiplier = 1 + (wave * 0.1);
@@ -70,14 +64,6 @@ export class Enemy {
             0, 0, Math.PI * 2
         );
         ctx.fill();
-
-        // Boss ölüm animasyonu
-        if (this.isBoss && this.isDying) {
-            ctx.globalAlpha = this.alpha;
-            this.drawBoss(ctx);
-            ctx.globalAlpha = 1;
-            return;
-        }
 
         // Boss veya normal düşman çizimi
         if (this.isBoss) {
@@ -185,40 +171,11 @@ export class Enemy {
 
     update() {
         if (!this.isActive) return;
-
-        if (this.isBoss && this.isDying) {
-            this.deathAnimationFrame++;
-            if (this.deathAnimationFrame >= this.maxDeathFrames) {
-                this.isActive = false;
-                return;
-            }
-        }
         
         this.x += this.speedX;
         this.time += this.isBoss ? 
             GAME_CONFIG.ENEMY.BOSS.WAVE_TIME_SPEED : 
             GAME_CONFIG.ENEMY.NORMAL.WAVE_TIME_SPEED;
         this.y = this.initialY + Math.sin(this.time) * this.amplitude;
-    }
-
-    startDeathAnimation() {
-        this.isDying = true;
-        this.deathAnimationFrame = 0;
-        this.deathAnimationComplete = false;
-    }
-
-    updateDeathAnimation() {
-        if (this.isDying) {
-            this.deathAnimationFrame++;
-            
-            // Animasyon efektleri burada
-            this.width *= 0.95;  // Küçülme efekti
-            this.height *= 0.95;
-            this.alpha = 1 - (this.deathAnimationFrame / this.maxDeathFrames);
-
-            if (this.deathAnimationFrame >= this.maxDeathFrames) {
-                this.deathAnimationComplete = true;
-            }
-        }
     }
 } 
