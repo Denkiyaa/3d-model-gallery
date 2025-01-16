@@ -92,27 +92,27 @@ export class CardSystem {
                 else if (rand < 0.95) selectedRarity = 'epic';
                 else selectedRarity = 'legendary';
             } else {
-                // Normal wave'lerde legendary çok nadir
                 if (rand < 0.65) selectedRarity = 'common';
                 else if (rand < 0.90) selectedRarity = 'rare';
                 else if (rand < 0.99) selectedRarity = 'epic';
-                else selectedRarity = 'legendary'; // Sadece %1 şans
+                else selectedRarity = 'legendary';
             }
 
-            // Seçilen rarity'de kart var mı kontrol et
+            // Seçilen rarity'deki kartları filtrele
             const cardsOfRarity = cards.filter(card => card.rarity === selectedRarity);
             
-            // Yoksa bir alt rarity'ye düş
+            // Eğer o rarity'de kart yoksa, bir alt rarity'ye düş
+            let availableCards = cardsOfRarity;
             if (cardsOfRarity.length === 0) {
                 if (selectedRarity === 'legendary') selectedRarity = 'epic';
                 else if (selectedRarity === 'epic') selectedRarity = 'rare';
                 else selectedRarity = 'common';
+                
+                availableCards = cards.filter(card => card.rarity === selectedRarity);
             }
 
-            // Seçilen rarity'deki kartlardan birini rastgele seç
-            const availableCards = cards.filter(card => card.rarity === selectedRarity);
+            // Kartlardan birini rastgele seç
             const card = availableCards[Math.floor(Math.random() * availableCards.length)];
-            
             return { ...card, type };
         });
 
@@ -122,39 +122,26 @@ export class CardSystem {
         
         const cardSelection = document.createElement('div');
         cardSelection.className = 'card-selection';
-        cardSelection.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            color: white;
-            z-index: 1000;
-        `;
-        
         cardSelection.innerHTML = `
             <h2>${waveTitle}</h2>
             <h3>Choose Your Upgrade</h3>
-            <div class="cards ${waveClass}" style="display: flex; gap: 30px; justify-content: center;">
+            <div class="cards ${waveClass}">
                 ${selectedCards.map(card => `
-                    <div class="card ${card.rarity}" style="cursor: pointer; padding: 25px; background: rgba(0, 0, 0, 0.6); border-radius: 10px; width: 200px; position: relative;">
-                        <div class="rarity-label">${card.rarity.toUpperCase()}</div>
-                        <div class="card-icon" style="font-size: 48px; margin-bottom: 15px;">
+                    <div class="card ${card.rarity || 'common'}" style="cursor: pointer;">
+                        <div class="rarity-label">${(card.rarity || 'common').toUpperCase()}</div>
+                        <div class="card-icon">
                             ${this.CARD_ICONS[card.type]}
                         </div>
-                        <h4 style="margin: 0 0 15px 0; font-size: 20px; color: #fff;">${card.name}</h4>
-                        <p style="margin: 0; color: #ccc; font-size: 16px;">${card.description}</p>
+                        <h4>${card.name}</h4>
+                        <p>${card.description}</p>
                     </div>
                 `).join('')}
             </div>
         `;
         
         const cards = cardSelection.querySelectorAll('.card');
-        cards.forEach((card, index) => {
-            card.addEventListener('click', () => this.selectCard(selectedCards[index]));
+        cards.forEach((cardElement, index) => {
+            cardElement.addEventListener('click', () => this.selectCard(selectedCards[index]));
         });
         
         document.body.appendChild(cardSelection);
