@@ -1,3 +1,5 @@
+import { GAME_CONFIG } from './config.js';
+
 // Kart sistemi
 export class CardSystem {
     constructor(game) {
@@ -52,6 +54,8 @@ export class CardSystem {
                 { name: 'Ultimate Impact', bonus: 0.20, description: 'Critical Damage +20%', rarity: 'legendary' }
             ]
         };
+
+        this.penaltyCards = Object.values(GAME_CONFIG.PENALTY_CARDS);
     }
 
     showCardSelection() {
@@ -61,103 +65,41 @@ export class CardSystem {
         if (existingCardSelection) {
             existingCardSelection.remove();
         }
-        
-        const cardTypes = Object.keys(this.cardPool);
-        const isBossWave = this.game.waveManager.currentWave % 5 === 0;
-        
-        let selectedTypes;
-        if (isBossWave) {
-            // Boss wave'de multiShot kartı kesin gelsin, yanına 2 tane random kart
-            selectedTypes = ['multiShot'];
-            const otherTypes = cardTypes.filter(type => type !== 'multiShot');
-            const additionalTypes = this.shuffleArray(otherTypes).slice(0, 2);
-            selectedTypes.push(...additionalTypes);
-        } else {
-            // Normal wave'lerde multiShot kartı gelmesin
-            const availableTypes = cardTypes.filter(type => type !== 'multiShot');
-            selectedTypes = this.shuffleArray(availableTypes).slice(0, 3);
-        }
-        
-        const selectedCards = selectedTypes.map(type => {
-            const cards = this.cardPool[type];
-            
-            // Rarity seçimi için random sayı
-            const rand = Math.random();
-            let selectedRarity;
-            
-            // Boss wave'de daha iyi kartlar gelsin
-            if (isBossWave) {
-                if (rand < 0.40) selectedRarity = 'common';
-                else if (rand < 0.75) selectedRarity = 'rare';
-                else if (rand < 0.95) selectedRarity = 'epic';
-                else selectedRarity = 'legendary';
-            } else {
-                // Normal wave'lerde legendary çok nadir
-                if (rand < 0.65) selectedRarity = 'common';
-                else if (rand < 0.90) selectedRarity = 'rare';
-                else if (rand < 0.99) selectedRarity = 'epic';
-                else selectedRarity = 'legendary'; // Sadece %1 şans
-            }
 
-            // Seçilen rarity'de kart var mı kontrol et
-            const cardsOfRarity = cards.filter(card => card.rarity === selectedRarity);
-            
-            // Yoksa bir alt rarity'ye düş
-            if (cardsOfRarity.length === 0) {
-                if (selectedRarity === 'legendary') selectedRarity = 'epic';
-                else if (selectedRarity === 'epic') selectedRarity = 'rare';
-                else selectedRarity = 'common';
-            }
-
-            // Seçilen rarity'deki kartlardan birini rastgele seç
-            const availableCards = cards.filter(card => card.rarity === selectedRarity);
-            const card = availableCards[Math.floor(Math.random() * availableCards.length)];
-            
-            return { ...card, type };
-        });
-
-        // Boss wave başlığını özelleştir
-        const waveTitle = isBossWave ? 'Boss Wave Completed!' : 'Wave Completed!';
-        const waveClass = isBossWave ? 'boss-wave' : '';
-        
         const cardSelection = document.createElement('div');
         cardSelection.className = 'card-selection';
-        cardSelection.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            color: white;
-            z-index: 1000;
-        `;
+        
+        const selectedCards = this.getSelectedCards();
         
         cardSelection.innerHTML = `
-            <h2>${waveTitle}</h2>
-            <h3>Choose Your Upgrade</h3>
-            <div class="cards ${waveClass}" style="display: flex; gap: 30px; justify-content: center;">
-                ${selectedCards.map(card => `
-                    <div class="card ${card.rarity}" style="cursor: pointer; padding: 25px; background: rgba(0, 0, 0, 0.6); border-radius: 10px; width: 200px; position: relative;">
-                        <div class="rarity-label">${card.rarity.toUpperCase()}</div>
-                        <div class="card-icon" style="font-size: 48px; margin-bottom: 15px;">
-                            ${this.CARD_ICONS[card.type]}
+            <div class="card-selection-content">
+                <h2>${this.game.waveManager.currentWave % 5 === 0 ? 'Boss Wave Completed!' : 'Wave Completed!'}</h2>
+                <div class="cards">
+                    ${selectedCards.map(card => `
+                        <div class="card ${card.rarity || 'common'}">
+                            <h4>${card.name}</h4>
+                            <p>${card.description}</p>
+                            <div class="card-cost">
+                                <span class="cost-value">${GAME_CONFIG.CARD_COSTS[card.rarity ? card.rarity.toUpperCase() : 'COMMON']}</span>
+                            </div>
                         </div>
-                        <h4 style="margin: 0 0 15px 0; font-size: 20px; color: #fff;">${card.name}</h4>
-                        <p style="margin: 0; color: #ccc; font-size: 16px;">${card.description}</p>
-                    </div>
-                `).join('')}
+                    `).join('')}
+                </div>
+                <button class="skip-button">Skip (Random Penalty)</button>
             </div>
         `;
-        
-        const cards = cardSelection.querySelectorAll('.card');
-        cards.forEach((card, index) => {
-            card.addEventListener('click', () => this.selectCard(selectedCards[index]));
-        });
-        
+
         document.body.appendChild(cardSelection);
+
+        // Kart seçim olaylarını ekle
+        const cards = cardSelection.querySelectorAll('.card');
+        cards.forEach((cardElement, index) => {
+            cardElement.addEventListener('click', () => this.handleCardSelection(selectedCards[index], cardSelection));
+        });
+
+        // Skip butonu olayını ekle
+        const skipButton = cardSelection.querySelector('.skip-button');
+        skipButton.addEventListener('click', () => this.handleSkip(cardSelection));
     }
 
     selectCard(card) {
@@ -197,5 +139,108 @@ export class CardSystem {
             [array[i], array[j]] = [array[j], array[i]];
         }
         return array;
+    }
+
+    applyRandomPenalty() {
+        const penalty = this.penaltyCards[Math.floor(Math.random() * this.penaltyCards.length)];
+        
+        // Ceza kartını göster
+        const penaltyCard = document.createElement('div');
+        penaltyCard.className = 'penalty-card';
+        penaltyCard.innerHTML = `
+            <div class="card penalty">
+                <div class="card-icon">⚠️</div>
+                <h4>${penalty.name}</h4>
+                <p>${penalty.description}</p>
+            </div>
+        `;
+        document.body.appendChild(penaltyCard);
+
+        // Cezayı uygula
+        const { type, value } = penalty.effect;
+        switch(type) {
+            case 'attackSpeed':
+                this.game.player.attackSpeed *= value;
+                break;
+            case 'damage':
+                this.game.player.damage *= value;
+                break;
+            case 'criticalChance':
+                this.game.player.criticalChance = Math.max(0, (this.game.player.criticalChance || 0) + value);
+                break;
+            case 'arrowSpeed':
+                this.game.player.arrowSpeed *= value;
+                break;
+        }
+
+        // 3 saniye sonra kartı kaldır
+        setTimeout(() => penaltyCard.remove(), 3000);
+    }
+
+    getSelectedCards() {
+        const cardTypes = Object.keys(this.cardPool);
+        const isBossWave = this.game.waveManager.currentWave % 5 === 0;
+        
+        let selectedTypes;
+        if (isBossWave) {
+            selectedTypes = ['multiShot'];
+            const otherTypes = cardTypes.filter(type => type !== 'multiShot');
+            const additionalTypes = this.shuffleArray(otherTypes).slice(0, 2);
+            selectedTypes.push(...additionalTypes);
+        } else {
+            const availableTypes = cardTypes.filter(type => type !== 'multiShot');
+            selectedTypes = this.shuffleArray(availableTypes).slice(0, 3);
+        }
+        
+        return selectedTypes.map(type => {
+            const cards = this.cardPool[type];
+            const rand = Math.random();
+            let selectedRarity;
+            
+            if (isBossWave) {
+                if (rand < 0.40) selectedRarity = 'common';
+                else if (rand < 0.75) selectedRarity = 'rare';
+                else if (rand < 0.95) selectedRarity = 'epic';
+                else selectedRarity = 'legendary';
+            } else {
+                if (rand < 0.65) selectedRarity = 'common';
+                else if (rand < 0.90) selectedRarity = 'rare';
+                else if (rand < 0.99) selectedRarity = 'epic';
+                else selectedRarity = 'legendary';
+            }
+
+            const cardsOfRarity = cards.filter(card => card.rarity === selectedRarity);
+            let availableCards = cardsOfRarity;
+            
+            if (cardsOfRarity.length === 0) {
+                selectedRarity = 'common';
+                availableCards = cards.filter(card => card.rarity === 'common');
+            }
+
+            const card = availableCards[Math.floor(Math.random() * availableCards.length)];
+            return { ...card, type };
+        });
+    }
+
+    handleCardSelection(card, cardSelection) {
+        const cost = GAME_CONFIG.CARD_COSTS[card.rarity.toUpperCase()];
+        if (this.game.currency >= cost) {
+            this.game.currency -= cost;
+            this.selectCard(card);
+            cardSelection.remove();
+            this.isChoosingCard = false;
+            this.game.waveManager.startNewWave();
+        } else {
+            const cardElement = cardSelection.querySelector(`.card.${card.rarity}`);
+            cardElement.classList.add('cannot-afford');
+            setTimeout(() => cardElement.classList.remove('cannot-afford'), 500);
+        }
+    }
+
+    handleSkip(cardSelection) {
+        this.applyRandomPenalty();
+        cardSelection.remove();
+        this.isChoosingCard = false;
+        this.game.waveManager.startNewWave();
     }
 } 

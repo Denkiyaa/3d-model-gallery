@@ -8,99 +8,33 @@ export class WaveManager {
         this.currentWave = GAME_CONFIG.INITIAL_WAVE;
         this.enemiesRemaining = this.calculateEnemyCount();
         this.isSpawning = true;
-        
-        this.waveStatus = document.getElementById('waveStatus');
-        this.updateWaveDisplay();
-        this.spawnEnemy();
-    }
-
-    calculateEnemyCount() {
-        const isBossWave = this.currentWave % 5 === 0;
-        if (isBossWave) {
-            return 1; // Boss wave'de sadece 1 düşman
-        }
-        
-        // Her boss wave sonrası düşman sayısı artar
-        const bossWavesPassed = Math.floor((this.currentWave - 1) / 5);
-        const baseEnemyCount = 5;
-        const enemyIncrease = bossWavesPassed * 2; // Her boss sonrası 2 düşman daha
-        
-        return baseEnemyCount + enemyIncrease;
-    }
-
-    calculateDifficulty() {
-        // Her boss wave sonrası zorluk artar
-        const bossWavesPassed = Math.floor((this.currentWave - 1) / 5);
-        
-        // Hız artışı (her boss sonrası %20, maksimum %100)
-        const speedMultiplier = 1 + Math.min(1, bossWavesPassed * 0.2);
-        
-        // Can artışı (her boss sonrası %30, maksimum %200)
-        const healthMultiplier = 1 + Math.min(2, bossWavesPassed * 0.3);
-        
-        return {
-            speed: speedMultiplier,
-            health: healthMultiplier
-        };
     }
 
     updateWaveDisplay() {
-        this.waveStatus.textContent = `Wave ${this.currentWave}`;
-        
-        // Boss wave kontrolü ve yazı gösterimi
-        if (this.currentWave % 5 === 0) {
-            const bossText = document.createElement('div');
-            bossText.className = 'boss-wave-text';
-            bossText.textContent = 'BOSS WAVE!';
-            bossText.style.cssText = `
-                position: fixed;
-                top: 20%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                font-size: 48px;
-                font-weight: bold;
-                color: #FFD700;
-                text-shadow: 0 0 10px #FF0000;
-                animation: bossTextAppear 0.5s ease-out;
-                z-index: 1000;
+        const waveStatus = document.getElementById('waveStatus');
+        if (waveStatus) {
+            waveStatus.innerHTML = `
+                <div>WAVE</div>
+                <div>${this.currentWave}</div>
             `;
-            document.body.appendChild(bossText);
-
-            // CSS animasyonları
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes bossTextAppear {
-                    from { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-                    to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-                }
-                @keyframes bossTextFade {
-                    to { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
-                }
-                .boss-wave-text.fade-out {
-                    animation: bossTextFade 0.5s ease-out forwards;
-                }
-            `;
-            document.head.appendChild(style);
-
-            // 1.5 saniye sonra yazıyı kaldır
-            setTimeout(() => {
-                bossText.classList.add('fade-out');
-                setTimeout(() => {
-                    bossText.remove();
-                    style.remove();
-                }, 500);
-            }, 1500);
         }
     }
 
     startNewWave() {
-        if (this.currentWave < 100) {
-            this.currentWave++;
-            this.enemiesRemaining = this.calculateEnemyCount();
-            this.isSpawning = true;
-            this.updateWaveDisplay();
-            this.spawnEnemy();
-        }
+        if (this.isSpawning || this.game.cardSystem.isChoosingCard) return;
+        
+        console.log('Starting new wave...');
+        this.currentWave++;
+        this.enemiesRemaining = this.calculateEnemyCount();
+        this.isSpawning = true;
+        this.updateWaveDisplay();
+        
+        // Wave tamamlama bonusu
+        this.game.currency += GAME_CONFIG.CURRENCY.WAVE_COMPLETION;
+        this.game.updateCurrency();
+        
+        // Yeni düşmanları spawn et
+        setTimeout(() => this.spawnEnemy(), 1000);
     }
 
     spawnEnemy() {
@@ -108,27 +42,34 @@ export class WaveManager {
             this.isSpawning = false;
             return;
         }
-        
-        const enemy = new Enemy(this.game.canvas, this.currentWave);
-        const difficulty = this.calculateDifficulty();
-        
-        if (this.currentWave % 5 === 0) {
-            // Boss özellikleri Enemy sınıfında ayarlanıyor
-            this.enemiesRemaining = 0; // Boss geldiğinde başka düşman gelmesin
-        } else {
-            // Normal düşmanların hızını ve canını artır
-            enemy.speedX *= difficulty.speed;
-            enemy.health *= difficulty.health;
-            enemy.maxHealth = enemy.health;
-        }
-        
+
+        const isBossWave = this.currentWave % 5 === 0;
+        const enemy = new Enemy(this.game.canvas, this.currentWave, isBossWave);
         this.game.enemies.push(enemy);
         this.enemiesRemaining--;
-        
+
         if (this.enemiesRemaining > 0) {
-            setTimeout(() => this.spawnEnemy(), GAME_CONFIG.SPAWN_DELAY);
+            const spawnInterval = Math.max(
+                1000,
+                GAME_CONFIG.WAVE.SPAWN_INTERVAL - (this.currentWave * GAME_CONFIG.WAVE.SPAWN_INTERVAL_DECREASE)
+            );
+            setTimeout(() => this.spawnEnemy(), spawnInterval);
         } else {
             this.isSpawning = false;
         }
+    }
+
+    onWaveComplete() {
+        if (!this.isSpawning && this.game.enemies.length === 0) {
+            console.log('Wave completed, showing card selection');
+            this.game.cardSystem.showCardSelection();
+        }
+    }
+
+    calculateEnemyCount() {
+        const isBossWave = this.currentWave % 5 === 0;
+        return isBossWave ? 1 : 
+            GAME_CONFIG.WAVE.INITIAL_ENEMIES + 
+            Math.floor((this.currentWave - 1) / 5) * GAME_CONFIG.WAVE.ENEMIES_INCREMENT;
     }
 } 

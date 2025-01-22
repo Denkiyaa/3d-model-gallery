@@ -34,7 +34,6 @@ export class Game {
         })
         .then(data => {
             console.log('Oyuncu kaydedildi:', data);
-            // Oyun başlatma işlemlerine devam et
             this.initializeGame();
         })
         .catch(error => {
@@ -43,6 +42,8 @@ export class Game {
         });
 
         this.damageTexts = [];  // Hasar yazılarını tutacak array
+        this.currency = GAME_CONFIG.CURRENCY.INITIAL;
+        this.isTransitioningWave = false;
     }
 
     initializeGame() {
@@ -68,14 +69,15 @@ export class Game {
         this.waveManager = new WaveManager(this);
         this.cardSystem = new CardSystem(this);
         
+        // UI'ı oluştur
+        this.createUI();
+        
         // İlk wave'i başlat
         this.waveManager.spawnEnemy();
         
         this.maxHealth = 100;
         this.currentHealth = this.maxHealth;
         this.damagePerEnemy = 10;
-        
-        this.createHealthBar();
         
         // Oyun nesnesini global olarak erişilebilir yap
         window.game = this;
@@ -91,120 +93,92 @@ export class Game {
     }
 
     update() {
-        if (this.isGameOver) return; // Oyun bittiyse güncelleme yapma
-        
+        if (this.isGameOver) return;
         if (this.cardSystem.isChoosingCard) return;
         
         // Update player
         this.player.update();
         
-        // Update enemies and check collisions
+        // Update enemies
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
             
-            // Düşman kaleye ulaştı mı?
             if (enemy.x <= GAME_CONFIG.CASTLE_X + GAME_CONFIG.CASTLE_WIDTH) {
-                // Boss ise daha fazla hasar versin
-                if (enemy.isBoss) {
-                    this.currentHealth -= enemy.damage; // Boss hasarı
-                    enemy.isActive = false;  // Boss'u deaktive et
-                    this.enemies.splice(i, 1);  // Boss'u listeden kaldır
-                } else {
-                    this.currentHealth -= enemy.damage;
-                    enemy.isActive = false;
-                    this.enemies.splice(i, 1);
-                }
-                
-                this.updateHealthBar();
-                
-                // Can sıfırın altına düştü mü?
-                if (this.currentHealth <= 0) {
-                    this.gameOver();
-                    return;
-                }
-                continue;
-            }
-            
-            enemy.update();
-            
-            // Düşman öldü mü?
-            if (enemy.health <= 0) {
-                enemy.isActive = false;
+                this.currentHealth -= enemy.damage;
                 this.enemies.splice(i, 1);
-                this.score += enemy.isBoss ? 50 : 10;
-                this.updateScore();
-                continue;
-            }
-        }
-        
-        // Update arrows and check collisions
-        for (let i = this.arrows.length - 1; i >= 0; i--) {
-            const arrow = this.arrows[i];
-            
-            // Ok ekrandan çıktı mı?
-            if (arrow.x > this.canvas.width || arrow.x < 0 || 
-                arrow.y > this.canvas.height || arrow.y < 0) {
-                this.arrows.splice(i, 1);
-                continue;
-            }
-            
-            // Ok aktif değilse kaldır
-            if (!arrow.isActive) {
-                this.arrows.splice(i, 1);
+                this.updateHealthBar();
                 continue;
             }
 
-            arrow.update();
-            
-            // Hedef düşman ölmüşse veya artık oyunda değilse
-            if (arrow.target && !this.enemies.includes(arrow.target)) {
-                arrow.continueForward();
+            if (enemy.health <= 0) {
+                this.enemies.splice(i, 1);
+                // Boss ödüllerini artır
+                const isBoss = enemy.isBoss;
+                this.score += isBoss ? 100 : 10;
+                this.currency += isBoss ? 
+                    GAME_CONFIG.CURRENCY.KILL_REWARD.BOSS : 
+                    GAME_CONFIG.CURRENCY.KILL_REWARD.NORMAL;
+                this.updateScore();
+                this.updateCurrency();
                 continue;
             }
+
+            enemy.update();
+        }
+        
+        // Update arrows
+        for (let i = this.arrows.length - 1; i >= 0; i--) {
+            const arrow = this.arrows[i];
+            arrow.update();
             
-            // Ok düşmana çarptı mı?
-            if (arrow.target && this.checkCollision(arrow, arrow.target)) {
-                const isCritical = Math.random() < this.player.criticalChance;
-                const baseDamage = this.player.damage;
-                const critMultiplier = this.player.criticalDamage || GAME_CONFIG.PLAYER.INITIAL_CRIT_DAMAGE;
-                const damage = isCritical ? baseDamage * critMultiplier : baseDamage;
-                
-                // Hasar yazısı ekle
-                this.damageTexts.push(new DamageText(
-                    arrow.target.x + arrow.target.width / 2,
-                    arrow.target.y,
-                    Math.round(damage),
-                    isCritical
-                ));
-                
-                arrow.target.health -= damage;
-                arrow.isActive = false;
-                
-                // Düşman öldü mü kontrol et
-                if (arrow.target.health <= 0) {
-                    const enemyIndex = this.enemies.indexOf(arrow.target);
-                    if (enemyIndex !== -1) {
-                        this.enemies.splice(enemyIndex, 1);
-                        this.score += arrow.target.isBoss ? 50 : 10;
-                        this.updateScore();
-                    }
+            // Ok çarptı mı kontrol et
+            for (const enemy of this.enemies) {
+                if (this.checkCollision(arrow, enemy)) {
+                    // Kritik vuruş kontrolü
+                    const isCritical = Math.random() < (this.player.criticalChance || 0);
+                    const damage = isCritical ? 
+                        this.player.damage * (this.player.criticalDamage || 1.5) : 
+                        this.player.damage;
+                    
+                    enemy.health -= damage;
+                    
+                    // Hasar yazısını ekle
+                    this.damageTexts.push(new DamageText(
+                        enemy.x + enemy.width / 2,
+                        enemy.y,
+                        Math.floor(damage),
+                        isCritical
+                    ));
+                    
+                    this.arrows.splice(i, 1);
+                    break;
                 }
             }
         }
-        
-        // Wave completion check with debug logs
-        if (this.enemies.length === 0) {
-            console.log('Düşman kalmadı');
-            console.log('isSpawning:', this.waveManager.isSpawning);
-            console.log('isChoosingCard:', this.cardSystem.isChoosingCard);
-            console.log('currentWave:', this.waveManager.currentWave);
+
+        // Wave kontrolü
+        if (this.enemies.length === 0 && 
+            !this.waveManager.isSpawning && 
+            !this.cardSystem.isChoosingCard && 
+            !this.isTransitioningWave) {
             
-            if (!this.waveManager.isSpawning && 
-                !this.cardSystem.isChoosingCard && 
-                this.waveManager.currentWave < 100) {
-                console.log('Kart seçim ekranı gösterilecek');
-                this.cardSystem.showCardSelection();
+            this.isTransitioningWave = true;
+            this.waveManager.onWaveComplete();
+            setTimeout(() => {
+                this.isTransitioningWave = false;
+            }, 1000);
+        }
+
+        // Update damage texts
+        for (let i = this.damageTexts.length - 1; i >= 0; i--) {
+            if (!this.damageTexts[i].update()) {
+                this.damageTexts.splice(i, 1);
             }
+        }
+
+        // Game over kontrolü
+        if (this.currentHealth <= 0) {
+            this.gameOver();
         }
     }
 
@@ -218,16 +192,24 @@ export class Game {
     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Çevre elemanlarını çiz
+        // Çizim sırası önemli - arkadan öne doğru çizmeliyiz
+        
+        // 1. Önce arkaplanı çiz
         this.environment.draw();
+        
+        // 2. Kaleyi çiz
         this.castle.draw(this.canvas.height * 0.95);
-
-        // Oyun objelerini çiz
-        this.player.draw(this.ctx);
+        
+        // 3. Düşmanları çiz
         this.enemies.forEach(enemy => enemy.draw(this.ctx));
+        
+        // 4. Okları çiz
         this.arrows.forEach(arrow => arrow.draw(this.ctx));
-
-        // Hasar yazılarını güncelle ve çiz
+        
+        // 5. Oyuncuyu çiz
+        this.player.draw(this.ctx);
+        
+        // 6. Hasar yazılarını çiz
         this.damageTexts = this.damageTexts.filter(text => {
             const isAlive = text.update();
             if (isAlive) {
@@ -244,53 +226,22 @@ export class Game {
         this.ctx.fillText(`Score: ${this.score}`, 10, 60);
     }
 
-    createHealthBar() {
-        // Ana container
-        const healthContainer = document.createElement('div');
-        healthContainer.className = 'health-container';
-        
-        // Health label
-        const healthLabel = document.createElement('div');
-        healthLabel.className = 'health-label';
-        healthLabel.textContent = 'CASTLE HEALTH';
-        
-        // Health bar
-        const healthBar = document.createElement('div');
-        healthBar.className = 'health-bar';
-        
-        const healthFill = document.createElement('div');
-        healthFill.className = 'health-fill';
-        
-        // Score display
-        const scoreDisplay = document.createElement('div');
-        scoreDisplay.className = 'score-display';
-        scoreDisplay.textContent = `Score: ${this.score}`;
-        this.scoreDisplay = scoreDisplay; // Score'u güncelleyebilmek için referansı sakla
-        
-        // Elementleri birleştir
-        healthBar.appendChild(healthFill);
-        healthContainer.appendChild(healthLabel);
-        healthContainer.appendChild(healthBar);
-        healthContainer.appendChild(scoreDisplay);
-        document.body.appendChild(healthContainer);
-        
-        this.healthFill = healthFill;
-    }
-
     updateHealthBar() {
-        const percentage = (this.currentHealth / this.maxHealth) * 100;
-        this.healthFill.style.width = `${percentage}%`;
-        
-        if (this.currentHealth <= 0) {
-            // Game Over logic here
-            console.log('Game Over!');
+        const healthFill = document.querySelector('.health-fill');
+        if (healthFill) {
+            const percentage = (this.currentHealth / this.maxHealth) * 100;
+            healthFill.style.width = `${percentage}%`;
         }
     }
 
     // Score'u güncellemek için yeni metod
     updateScore() {
-        if (this.scoreDisplay) {
-            this.scoreDisplay.textContent = `Score: ${this.score}`;
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        if (scoreDisplay) {
+            scoreDisplay.innerHTML = `
+                <span class="icon"></span>
+                <span>${this.score}</span>
+            `;
         }
     }
 
@@ -305,12 +256,12 @@ export class Game {
         const waveStatus = document.getElementById('waveStatus');
         if (waveStatus) waveStatus.style.display = 'none';
 
-        // Skoru otomatik kaydet
-        const API_URL = 'https://craftedfromfilament.com/api/score';
-        fetch(API_URL, {
+        // Skoru kaydet
+        fetch(`${this.API_BASE_URL}/api/score`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify({
                 nickname: this.nickname,
@@ -360,6 +311,65 @@ export class Game {
                 window.location.reload();
             });
         });
+    }
+
+    updateCurrency() {
+        const currencyDisplay = document.getElementById('currencyDisplay');
+        if (currencyDisplay) {
+            currencyDisplay.innerHTML = `
+                <div>GOLD</div>
+                <div>${this.currency}</div>
+            `;
+        }
+    }
+
+    createUI() {
+        const statsContainer = document.createElement('div');
+        statsContainer.className = 'stats-container';
+
+        // Health Bar
+        const healthContainer = document.createElement('div');
+        healthContainer.className = 'health-container';
+        healthContainer.innerHTML = `
+            <div class="health-label">CASTLE HEALTH</div>
+            <div class="health-bar">
+                <div class="health-fill" style="width: 100%"></div>
+            </div>
+        `;
+
+        // Currency Display
+        const currencyDisplay = document.createElement('div');
+        currencyDisplay.id = 'currencyDisplay';
+        currencyDisplay.className = 'ui-element';
+        currencyDisplay.innerHTML = `
+            <div>GOLD</div>
+            <div>${this.currency}</div>
+        `;
+
+        // Wave Status
+        const waveStatus = document.createElement('div');
+        waveStatus.id = 'waveStatus';
+        waveStatus.className = 'ui-element';
+        waveStatus.innerHTML = `
+            <div>WAVE</div>
+            <div>${this.waveManager.currentWave}</div>
+        `;
+
+        // Score Display
+        const scoreDisplay = document.createElement('div');
+        scoreDisplay.id = 'scoreDisplay';
+        scoreDisplay.className = 'ui-element';
+        scoreDisplay.innerHTML = `
+            <div>SCORE</div>
+            <div><span class="icon"></span>${this.score}</div>
+        `;
+
+        statsContainer.appendChild(healthContainer);
+        statsContainer.appendChild(currencyDisplay);
+        statsContainer.appendChild(waveStatus);
+        statsContainer.appendChild(scoreDisplay);
+
+        document.body.appendChild(statsContainer);
     }
 }
 
