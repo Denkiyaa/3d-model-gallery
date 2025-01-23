@@ -219,10 +219,6 @@ app.get('/api/leaderboard', async (req, res) => {
     }
 });
 
-// Statik dosyalar için route'lar - sıralama önemli
-app.use('/', express.static(path.join(__dirname, 'build'))); // React build en üstte
-app.use('/game', express.static(path.join(__dirname, 'public/game')));
-app.use(express.static('public'));
 
 // Catch-all route - en sonda olmalı
 app.get('*', (req, res) => {
@@ -245,6 +241,11 @@ app.get('*', (req, res) => {
         res.sendFile(path.join(__dirname, 'public/index.html'));
     }
 });
+
+// Statik dosyalar için route'lar - sıralama önemli
+app.use('/', express.static(path.join(__dirname, 'build'))); // React build en üstte
+app.use('/game', express.static(path.join(__dirname, 'public/game')));
+app.use(express.static('public'));
 
 // Hata yakalama middleware'i ekleyelim
 app.use((err, req, res, next) => {
