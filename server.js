@@ -220,6 +220,17 @@ app.get('/api/leaderboard', async (req, res) => {
 });
 
 
+// Statik dosyalar için route'lar - sıralama önemli
+app.use('/', express.static(path.join(__dirname, 'build'))); // React build en üstte
+app.use('/game', express.static(path.join(__dirname, 'public/game')));
+app.use(express.static('public'));
+
+// Hata yakalama middleware'i ekleyelim
+app.use((err, req, res, next) => {
+    console.error('Server error:', err);
+    res.status(500).send('Internal Server Error');
+});
+
 // Catch-all route - en sonda olmalı
 app.get('*', (req, res) => {
     // API istekleri için 404
@@ -240,17 +251,6 @@ app.get('*', (req, res) => {
         // Fallback olarak public/index.html'i kullan
         res.sendFile(path.join(__dirname, 'public/index.html'));
     }
-});
-
-// Statik dosyalar için route'lar - sıralama önemli
-app.use('/', express.static(path.join(__dirname, 'build'))); // React build en üstte
-app.use('/game', express.static(path.join(__dirname, 'public/game')));
-app.use(express.static('public'));
-
-// Hata yakalama middleware'i ekleyelim
-app.use((err, req, res, next) => {
-    console.error('Server error:', err);
-    res.status(500).send('Internal Server Error');
 });
 
 const PORT = process.env.PORT || 3000;
