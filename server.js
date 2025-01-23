@@ -223,7 +223,7 @@ app.get('/api/leaderboard', async (req, res) => {
 // Statik dosyalar için route'lar - sıralama önemli
 app.use('/', express.static(path.join(__dirname, 'build'))); // React build en üstte
 app.use('/game', express.static(path.join(__dirname, 'public/game')));
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'build')));
 
 // Hata yakalama middleware'i ekleyelim
 app.use((err, req, res, next) => {
